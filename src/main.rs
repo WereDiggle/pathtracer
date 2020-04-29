@@ -1,5 +1,7 @@
 use image::*;
 
+pub mod vec3;
+
 fn main() {
     let image_width: u32 = 200;
     let image_height: u32 = 100;
@@ -19,8 +21,8 @@ fn main() {
             let g = (255.999 * g).floor() as u8;
             let b = (255.999 * b).floor() as u8;
 
-            image_buffer.put_pixel(col, image_height - 1 - row, Rgb([r,g,b]));
-            let progress = ((row*image_width + col)*100)/(image_height*image_width-1);
+            image_buffer.put_pixel(col, image_height - 1 - row, Rgb([r, g, b]));
+            let progress = ((row * image_width + col) * 100) / (image_height * image_width - 1);
             progress_bar.reach_percent(progress as i32);
         }
     }
