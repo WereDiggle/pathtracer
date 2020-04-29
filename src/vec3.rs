@@ -4,7 +4,7 @@ use std::ops;
 ///
 /// Useful for points, vectors, normals, and colors
 #[derive(Copy, Debug, Clone)]
-pub struct Vec3(f64, f64, f64);
+pub struct Vec3(pub f64, pub f64, pub f64);
 
 impl Vec3 {
     pub fn x(&self) -> f64 {
@@ -25,6 +25,22 @@ impl Vec3 {
 
     pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
+    }
+
+    pub fn dot(&self, other: Vec3) -> f64 {
+        self.0 * other.0 + self.1 * other.1 + self.2 * other.2
+    }
+
+    pub fn cross(&self, other: Vec3) -> Self {
+        Vec3(
+            self.1 * other.2 - self.2 * other.1,
+            self.2 * other.0 - self.0 * other.2,
+            self.0 * other.1 - self.1 * other.0,
+        )
+    }
+
+    pub fn unit_vector(&self) -> Self {
+        *self / self.length_squared()
     }
 
     pub fn color_string(&self) -> String {
@@ -90,5 +106,40 @@ impl ops::DivAssign<f64> for Vec3 {
         self.0 /= other;
         self.1 /= other;
         self.2 /= other;
+    }
+}
+
+impl ops::Add<Vec3> for Vec3 {
+    type Output = Self;
+    fn add(self, other: Self) -> Self::Output {
+        Self(self.0 + other.0, self.1 + other.1, self.2 + other.2)
+    }
+}
+
+impl ops::Sub<Vec3> for Vec3 {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self::Output {
+        Self(self.0 - other.0, self.1 - other.1, self.2 - other.2)
+    }
+}
+
+impl ops::Mul<Vec3> for Vec3 {
+    type Output = Self;
+    fn mul(self, other: Self) -> Self::Output {
+        Self(self.0 * other.0, self.1 * other.1, self.2 * other.2)
+    }
+}
+
+impl ops::Mul<f64> for Vec3 {
+    type Output = Self;
+    fn mul(self, other: f64) -> Self::Output {
+        Self(self.0 * other, self.1 * other, self.2 * other)
+    }
+}
+
+impl ops::Div<f64> for Vec3 {
+    type Output = Self;
+    fn div(self, other: f64) -> Self::Output {
+        Self(self.0 / other, self.1 / other, self.2 / other)
     }
 }

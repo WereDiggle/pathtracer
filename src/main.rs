@@ -1,6 +1,8 @@
 use image::*;
 
-pub mod vec3;
+mod vec3;
+
+use vec3::*;
 
 fn main() {
     let image_width: u32 = 200;
@@ -13,13 +15,15 @@ fn main() {
 
     for row in 0..image_height {
         for col in 0..image_width {
-            let r: f64 = col as f64 / image_width as f64;
-            let g: f64 = row as f64 / image_height as f64;
-            let b: f64 = 0.2;
+            let color = Vec3(
+                col as f64 / image_width as f64,
+                row as f64 / image_height as f64,
+                0.2,
+            );
 
-            let r = (255.999 * r).floor() as u8;
-            let g = (255.999 * g).floor() as u8;
-            let b = (255.999 * b).floor() as u8;
+            let r = (255.999 * color.0).floor() as u8;
+            let g = (255.999 * color.1).floor() as u8;
+            let b = (255.999 * color.2).floor() as u8;
 
             image_buffer.put_pixel(col, image_height - 1 - row, Rgb([r, g, b]));
             let progress = ((row * image_width + col) * 100) / (image_height * image_width - 1);
