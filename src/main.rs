@@ -1,8 +1,16 @@
 use image::*;
 
+mod ray;
 mod vec3;
 
+use ray::*;
 use vec3::*;
+
+fn ray_color(ray: Ray) -> Vec3 {
+    let unit_direction: Vec3 = ray.direction.unit_vector();
+    let t = 0.5 * (unit_direction.y() + 1.0);
+    (1.0 - t) * Vec3(1.0, 1.0, 1.0) + t * Vec3(0.5, 0.7, 1.0)
+}
 
 fn main() {
     let image_width: u32 = 200;
