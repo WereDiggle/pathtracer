@@ -21,20 +21,24 @@ fn main() {
     let mut progress_bar = progress::Bar::new();
     progress_bar.set_job_title("Rendering...");
 
-    for row in 0..image_height {
-        for col in 0..image_width {
-            let color = Vec3(
-                col as f64 / image_width as f64,
-                row as f64 / image_height as f64,
-                0.2,
-            );
+    let lower_left_corner = Vec3(-2.0, -1.0, -1.0);
+    let horizontal = Vec3(4.0, 0.0, 0.0);
+    let vertical = Vec3(0.0, 2.0, 0.0);
+    let origin = Vec3(0.0, 0.0, 0.0);
+
+    for j in 0..image_height {
+        for i in 0..image_width {
+            let u = i as f64 / image_width as f64;
+            let v = j as f64 / image_height as f64;
+            let r = Ray::new(origin, lower_left_corner + u * horizontal + v * vertical);
+            let color = ray_color(r);
 
             let r = (255.999 * color.0).floor() as u8;
             let g = (255.999 * color.1).floor() as u8;
             let b = (255.999 * color.2).floor() as u8;
 
-            image_buffer.put_pixel(col, image_height - 1 - row, Rgb([r, g, b]));
-            let progress = ((row * image_width + col) * 100) / (image_height * image_width - 1);
+            image_buffer.put_pixel(i, image_height - 1 - j, Rgb([r, g, b]));
+            let progress = ((j * image_width + i) * 100) / (image_height * image_width - 1);
             progress_bar.reach_percent(progress as i32);
         }
     }
