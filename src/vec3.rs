@@ -40,7 +40,7 @@ impl Vec3 {
     }
 
     pub fn unit_vector(&self) -> Self {
-        *self / self.length_squared()
+        *self / self.length()
     }
 
     pub fn color_string(&self) -> String {
