@@ -1,6 +1,8 @@
 use std::ops;
 
 use image::*;
+use rand::thread_rng;
+use rand::Rng;
 
 use crate::util::Clamp;
 
@@ -57,12 +59,11 @@ impl Vec3 {
     }
 
     pub fn random_range(min: f64, max: f64) -> Self {
-        use rand::thread_rng;
-        use rand::Rng;
+        let mut rng = thread_rng();
         Vec3(
-            thread_rng().gen_range(min, max),
-            thread_rng().gen_range(min, max),
-            thread_rng().gen_range(min, max),
+            rng.gen_range(min, max),
+            rng.gen_range(min, max),
+            rng.gen_range(min, max),
         )
     }
 
@@ -74,6 +75,14 @@ impl Vec3 {
             }
             return p;
         }
+    }
+
+    pub fn random_unit_vector() -> Self {
+        let mut rng = thread_rng();
+        let a = rng.gen_range(0.0, std::f64::consts::PI * 2.0);
+        let z = rng.gen_range(-1.0, 1.0);
+        let r = (1.0f64 - z * z).sqrt();
+        Vec3(r * a.cos(), r * a.sin(), z)
     }
 }
 
