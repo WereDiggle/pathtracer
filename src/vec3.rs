@@ -75,23 +75,14 @@ impl Vec3 {
             return p;
         }
     }
-
-    pub fn color_string(&self) -> String {
-        format!(
-            "[{}, {}, {}]",
-            (255.999 * self.0) as i32,
-            (255.999 * self.1) as i32,
-            (255.999 * self.2) as i32
-        )
-    }
 }
 
 impl From<Vec3> for image::Rgb<u8> {
     fn from(color: Vec3) -> Self {
         Rgb([
-            (256.0 * color.0.clam(0.0, 0.999)) as u8,
-            (256.0 * color.1.clam(0.0, 0.999)) as u8,
-            (256.0 * color.2.clam(0.0, 0.999)) as u8,
+            (256.0 * color.0.sqrt().clam(0.0, 0.999)) as u8,
+            (256.0 * color.1.sqrt().clam(0.0, 0.999)) as u8,
+            (256.0 * color.2.sqrt().clam(0.0, 0.999)) as u8,
         ])
     }
 }
