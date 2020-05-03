@@ -27,7 +27,8 @@ fn ray_color(ray: Ray, world: &Arc<dyn Hittable>, depth: u32) -> Vec3 {
 
     // We hit something
     if let Some(hit_record) = world.hit(&ray, 0.001, std::f64::INFINITY) {
-        let target = hit_record.position + hit_record.normal + Vec3::random_unit_vector();
+        //let target = hit_record.position + hit_record.normal + Vec3::random_unit_vector();
+        let target = hit_record.position + Vec3::random_in_hemisphere(hit_record.normal);
         return 0.5
             * ray_color(
                 Ray::new(hit_record.position, target - hit_record.position),

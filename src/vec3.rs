@@ -84,6 +84,15 @@ impl Vec3 {
         let r = (1.0f64 - z * z).sqrt();
         Vec3(r * a.cos(), r * a.sin(), z)
     }
+
+    pub fn random_in_hemisphere(normal: Vec3) -> Self {
+        let in_unit_sphere = Self::random_in_unit_sphere();
+        if normal.dot(in_unit_sphere) > 0.0 {
+            in_unit_sphere
+        } else {
+            -in_unit_sphere
+        }
+    }
 }
 
 impl From<Vec3> for image::Rgb<u8> {
