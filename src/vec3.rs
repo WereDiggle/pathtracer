@@ -2,6 +2,8 @@ use std::ops;
 
 use image::*;
 
+use crate::util::Clamp;
+
 /// Simple 3 data point structure
 ///
 /// Useful for points, vectors, normals, and colors
@@ -62,9 +64,9 @@ impl Vec3 {
 impl From<Vec3> for image::Rgb<u8> {
     fn from(color: Vec3) -> Self {
         Rgb([
-            (255.999 * color.0).floor() as u8,
-            (255.999 * color.1).floor() as u8,
-            (255.999 * color.2).floor() as u8,
+            (256.0 * color.0.clam(0.0, 0.999)) as u8,
+            (256.0 * color.1.clam(0.0, 0.999)) as u8,
+            (256.0 * color.2.clam(0.0, 0.999)) as u8,
         ])
     }
 }
