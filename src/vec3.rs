@@ -1,5 +1,7 @@
 use std::ops;
 
+use image::*;
+
 /// Simple 3 data point structure
 ///
 /// Useful for points, vectors, normals, and colors
@@ -7,6 +9,10 @@ use std::ops;
 pub struct Vec3(pub f64, pub f64, pub f64);
 
 impl Vec3 {
+    pub fn zero() -> Self {
+        Self(0.0, 0.0, 0.0)
+    }
+
     pub fn x(&self) -> f64 {
         self.0
     }
@@ -50,6 +56,16 @@ impl Vec3 {
             (255.999 * self.1) as i32,
             (255.999 * self.2) as i32
         )
+    }
+}
+
+impl From<Vec3> for image::Rgb<u8> {
+    fn from(color: Vec3) -> Self {
+        Rgb([
+            (255.999 * color.0).floor() as u8,
+            (255.999 * color.1).floor() as u8,
+            (255.999 * color.2).floor() as u8,
+        ])
     }
 }
 

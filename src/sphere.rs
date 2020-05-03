@@ -1,6 +1,4 @@
-use crate::hit::*;
-use crate::ray::*;
-use crate::vec3::*;
+use crate::*;
 
 pub struct Sphere {
     pub center: Vec3,
@@ -25,22 +23,18 @@ impl Hittable for Sphere {
             let root = discriminant.sqrt();
             let temp = (-half_b - root) / a;
             if temp < t_max && temp > t_min {
-                let position = r.at(temp);
-                return Some(HitRecord {
-                    t: temp,
-                    position,
-                    normal: (position - self.center) / self.radius,
-                });
+                let mut hit_record = HitRecord::at_position_and_distance(r.at(temp), temp);
+                let outward_normal = (hit_record.position - self.center) / self.radius;
+                hit_record.set_face_normal(r, outward_normal);
+                return Some(hit_record);
             }
 
             let temp = (-half_b + root) / a;
             if temp < t_max && temp > t_min {
-                let position = r.at(temp);
-                return Some(HitRecord {
-                    t: temp,
-                    position,
-                    normal: (position - self.center) / self.radius,
-                });
+                let mut hit_record = HitRecord::at_position_and_distance(r.at(temp), temp);
+                let outward_normal = (hit_record.position - self.center) / self.radius;
+                hit_record.set_face_normal(r, outward_normal);
+                return Some(hit_record);
             }
         }
         None
