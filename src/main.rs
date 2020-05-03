@@ -19,10 +19,21 @@ pub use sphere::*;
 pub use util::*;
 pub use vec3::*;
 
-fn ray_color(ray: Ray, world: &Arc<dyn Hittable>) -> Vec3 {
+fn ray_color(ray: Ray, world: &Arc<dyn Hittable>, depth: u32) -> Vec3 {
+    // Recursive base case
+    if depth == 0 {
+        return Vec3::zero();
+    }
+
     // We hit something
     if let Some(hit_record) = world.hit(&ray, 0.0, std::f64::INFINITY) {
-        return 0.5 * (hit_record.normal + Vec3(1.0, 1.0, 1.0));
+        let target = hit_record.position + hit_record.normal + Vec3::random_in_unit_sphere();
+        return 0.5
+            * ray_color(
+                Ray::new(hit_record.position, target - hit_record.position),
+                world,
+                depth - 1,
+            );
     }
 
     // Off into infinity
@@ -35,6 +46,7 @@ fn main() {
     let image_width: u32 = 200;
     let image_height: u32 = 100;
     let samples_per_pixel: u32 = 100;
+    let max_depth: u32 = 50;
 
     let mut image_buffer = DynamicImage::new_rgb8(image_width, image_height).to_rgb();
 
@@ -55,7 +67,7 @@ fn main() {
                 let u = (i as f64 + random::<f64>()) / image_width as f64;
                 let v = (j as f64 + random::<f64>()) / image_height as f64;
                 let r = camera.get_ray(u, v);
-                total_color += ray_color(r, &world);
+                total_color += ray_color(r, &world, max_depth);
             }
             let final_color = total_color / samples_per_pixel as f64;
 

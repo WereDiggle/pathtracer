@@ -51,6 +51,31 @@ impl Vec3 {
         *self / self.length()
     }
 
+    pub fn random() -> Self {
+        use rand::random;
+        Vec3(random::<f64>(), random::<f64>(), random::<f64>())
+    }
+
+    pub fn random_range(min: f64, max: f64) -> Self {
+        use rand::thread_rng;
+        use rand::Rng;
+        Vec3(
+            thread_rng().gen_range(min, max),
+            thread_rng().gen_range(min, max),
+            thread_rng().gen_range(min, max),
+        )
+    }
+
+    pub fn random_in_unit_sphere() -> Self {
+        loop {
+            let p = Self::random_range(-1.0, 1.0);
+            if p.length_squared() >= 1.0 {
+                continue;
+            }
+            return p;
+        }
+    }
+
     pub fn color_string(&self) -> String {
         format!(
             "[{}, {}, {}]",
