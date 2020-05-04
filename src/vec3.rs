@@ -1,6 +1,7 @@
 use std::ops;
 
 use image::*;
+use rand::random;
 use rand::thread_rng;
 use rand::Rng;
 
@@ -61,7 +62,6 @@ impl Vec3 {
     }
 
     pub fn random() -> Self {
-        use rand::random;
         Vec3(random::<f64>(), random::<f64>(), random::<f64>())
     }
 
@@ -75,13 +75,7 @@ impl Vec3 {
     }
 
     pub fn random_in_unit_sphere() -> Self {
-        loop {
-            let p = Self::random_range(-1.0, 1.0);
-            if p.length_squared() >= 1.0 {
-                continue;
-            }
-            return p;
-        }
+        Self::random_unit_vector() * random::<f64>()
     }
 
     pub fn random_unit_vector() -> Self {
