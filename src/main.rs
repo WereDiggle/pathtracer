@@ -53,16 +53,31 @@ fn main() {
     progress_bar.set_job_title("Rendering...");
 
     let mut world = HitList::new();
-    let gray_mat = Arc::new(Lambertian::from_albedo(Vec3(0.5, 0.5, 0.5)));
+
+    let red_diffuse = Arc::new(Lambertian::from_albedo(Vec3(0.7, 0.3, 0.3)));
+    let brown_diffuse = Arc::new(Lambertian::from_albedo(Vec3(0.8, 0.8, 0.0)));
+    let metal1 = Arc::new(Metal::from_albedo(Vec3(0.8, 0.6, 0.2)));
+    let metal2 = Arc::new(Metal::from_albedo(Vec3(0.8, 0.8, 0.8)));
+
     world.add(Arc::new(Sphere::new(
         Vec3(0.0, 0.0, -1.0),
         0.5,
-        gray_mat.clone(),
+        red_diffuse.clone(),
     )));
     world.add(Arc::new(Sphere::new(
         Vec3(0.0, -100.5, -1.0),
         100.0,
-        gray_mat.clone(),
+        brown_diffuse.clone(),
+    )));
+    world.add(Arc::new(Sphere::new(
+        Vec3(1.0, 0.0, -1.0),
+        0.5,
+        metal1.clone(),
+    )));
+    world.add(Arc::new(Sphere::new(
+        Vec3(-1.0, 0.0, -1.0),
+        0.5,
+        metal2.clone(),
     )));
     let world: Arc<dyn Hittable> = Arc::new(world);
 

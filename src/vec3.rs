@@ -12,6 +12,9 @@ use crate::util::Clamp;
 #[derive(Copy, Debug, Clone)]
 pub struct Vec3(pub f64, pub f64, pub f64);
 
+type Point3 = Vec3;
+type Color3 = Vec3;
+
 impl Vec3 {
     pub fn zero() -> Self {
         Self(0.0, 0.0, 0.0)
@@ -47,6 +50,10 @@ impl Vec3 {
             self.2 * other.0 - self.0 * other.2,
             self.0 * other.1 - self.1 * other.0,
         )
+    }
+
+    pub fn reflect(&self, normal: Vec3) -> Self {
+        *self - 2.0 * self.dot(normal) * normal
     }
 
     pub fn unit_vector(&self) -> Self {
