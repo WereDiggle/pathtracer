@@ -56,8 +56,8 @@ fn main() {
 
     let red_diffuse = Arc::new(Lambertian::from_albedo(Vec3(0.7, 0.3, 0.3)));
     let brown_diffuse = Arc::new(Lambertian::from_albedo(Vec3(0.8, 0.8, 0.0)));
-    let metal1 = Arc::new(Metal::from_albedo(Vec3(0.8, 0.6, 0.2)));
-    let metal2 = Arc::new(Metal::from_albedo(Vec3(0.8, 0.8, 0.8)));
+    let metal1 = Arc::new(Metal::new(Vec3(0.8, 0.6, 0.2), 1.0));
+    let metal2 = Arc::new(Metal::new(Vec3(0.8, 0.8, 0.8), 0.3));
 
     world.add(Arc::new(Sphere::new(
         Vec3(0.0, 0.0, -1.0),
