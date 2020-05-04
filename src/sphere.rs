@@ -1,13 +1,19 @@
 use crate::*;
+use std::sync::Arc;
 
 pub struct Sphere {
     pub center: Vec3,
     pub radius: f64,
+    pub material: Arc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f64) -> Self {
-        Self { center, radius }
+    pub fn new(center: Vec3, radius: f64, material: Arc<dyn Material>) -> Self {
+        Self {
+            center,
+            radius,
+            material,
+        }
     }
 }
 
@@ -21,17 +27,17 @@ impl Hittable for Sphere {
 
         if discriminant > 0.0 {
             let root = discriminant.sqrt();
-            let temp = (-half_b - root) / a;
-            if temp < t_max && temp > t_min {
-                let mut hit_record = HitRecord::at_position_and_distance(r.at(temp), temp);
-                let outward_normal = (hit_record.position - self.center) / self.radius;
-                hit_record.set_face_normal(r, outward_normal);
-                return Some(hit_record);
-            }
+            let distance = (-half_b - root) / a;
+            let distance = if distance < t_max && distance > t_min {
+                distance
+            } else {
+                (-half_b + root) / a
+            };
 
-            let temp = (-half_b + root) / a;
-            if temp < t_max && temp > t_min {
-                let mut hit_record = HitRecord::at_position_and_distance(r.at(temp), temp);
+            if distance < t_max && distance > t_min {
+                let mut hit_record = HitRecord::from_material(self.material.clone());
+                hit_record.position = r.at(distance);
+                hit_record.distance = distance;
                 let outward_normal = (hit_record.position - self.center) / self.radius;
                 hit_record.set_face_normal(r, outward_normal);
                 return Some(hit_record);

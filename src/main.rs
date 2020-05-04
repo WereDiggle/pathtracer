@@ -6,6 +6,7 @@ use rand::random;
 mod camera;
 mod hit;
 mod hit_list;
+mod material;
 mod ray;
 mod sphere;
 mod util;
@@ -14,6 +15,7 @@ mod vec3;
 pub use camera::*;
 pub use hit::*;
 pub use hit_list::*;
+pub use material::*;
 pub use ray::*;
 pub use sphere::*;
 pub use util::*;
@@ -27,14 +29,10 @@ fn ray_color(ray: Ray, world: &Arc<dyn Hittable>, depth: u32) -> Vec3 {
 
     // We hit something
     if let Some(hit_record) = world.hit(&ray, 0.001, std::f64::INFINITY) {
-        //let target = hit_record.position + hit_record.normal + Vec3::random_unit_vector();
-        let target = hit_record.position + Vec3::random_in_hemisphere(hit_record.normal);
-        return 0.5
-            * ray_color(
-                Ray::new(hit_record.position, target - hit_record.position),
-                world,
-                depth - 1,
-            );
+        if let Some((attenuation, scatter_ray)) = hit_record.material.scatter(&ray, &hit_record) {
+            return attenuation * ray_color(scatter_ray, world, depth - 1);
+        }
+        return Vec3(0.0, 0.0, 0.0);
     }
 
     // Off into infinity
@@ -55,8 +53,17 @@ fn main() {
     progress_bar.set_job_title("Rendering...");
 
     let mut world = HitList::new();
-    world.add(Arc::new(Sphere::new(Vec3(0.0, 0.0, -1.0), 0.5)));
-    world.add(Arc::new(Sphere::new(Vec3(0.0, -100.5, -1.0), 100.0)));
+    let gray_mat = Arc::new(Lambertian::from_albedo(Vec3(0.5, 0.5, 0.5)));
+    world.add(Arc::new(Sphere::new(
+        Vec3(0.0, 0.0, -1.0),
+        0.5,
+        gray_mat.clone(),
+    )));
+    world.add(Arc::new(Sphere::new(
+        Vec3(0.0, -100.5, -1.0),
+        100.0,
+        gray_mat.clone(),
+    )));
     let world: Arc<dyn Hittable> = Arc::new(world);
 
     let camera = Camera::default();

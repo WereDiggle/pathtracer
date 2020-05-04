@@ -1,6 +1,9 @@
+use std::sync::Arc;
+
 use crate::*;
 
 pub struct HitRecord {
+    pub material: Arc<dyn Material>,
     pub position: Vec3,
     pub normal: Vec3,
     pub distance: f64,
@@ -8,12 +11,13 @@ pub struct HitRecord {
 }
 
 impl HitRecord {
-    pub fn at_position_and_distance(position: Vec3, distance: f64) -> Self {
+    pub fn from_material(material: Arc<dyn Material>) -> Self {
         Self {
-            position,
+            position: Vec3::zero(),
             normal: Vec3::zero(),
-            distance: distance,
+            distance: 0.0,
             front_face: true,
+            material,
         }
     }
 
