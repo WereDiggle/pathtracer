@@ -26,8 +26,8 @@ pub use worker::*;
 
 fn main() {
     let config = Config {
-        image_width: 1920,
-        image_height: 1080,
+        image_width: 192,
+        image_height: 108,
         samples_per_pixel: 100,
         max_depth: 50,
     };
@@ -35,8 +35,7 @@ fn main() {
     let mut image_buffer = DynamicImage::new_rgb8(config.image_width, config.image_height).to_rgb();
 
     let mut progress_bar = progress::Bar::new();
-    progress_bar.set_job_title("Sending Jobs...");
-
+    progress_bar.set_job_title("Rendering...");
     let world = random_scene();
 
     let lookfrom = Vec3(13.0, 2.0, 3.0);
@@ -49,18 +48,21 @@ fn main() {
         10.0,
     ));
 
-    let worker_pool = WorkerPool::spawn(12, world, camera, config.clone());
+    let worker_pool = WorkerPool::spawn(11, world, camera, config.clone());
+    let worker_pool = Arc::new(worker_pool);
 
-    for v in 0..config.image_height {
-        for u in 0..config.image_width {
-            worker_pool.send_job(u, v);
-            let progress = ((v * config.image_width + u) * 100)
-                / (config.image_height * config.image_width - 1);
-            progress_bar.reach_percent(progress as i32);
-        }
+    {
+        let worker_pool = worker_pool.clone();
+        let config = config.clone();
+        std::thread::spawn(move || {
+            for v in 0..config.image_height {
+                for u in 0..config.image_width {
+                    worker_pool.send_job(u, v);
+                }
+            }
+        });
     }
 
-    progress_bar.set_job_title("Sending Rendering...");
     for prog in 0..(config.image_height * config.image_width) {
         let (x, y, color) = worker_pool.recv_color();
         image_buffer.put_pixel(x, config.image_height - 1 - y, color.into());
