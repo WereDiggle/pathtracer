@@ -13,8 +13,8 @@ use crate::util::Clamp;
 #[derive(Copy, Debug, Clone)]
 pub struct Vec3(pub f64, pub f64, pub f64);
 
-type Point3 = Vec3;
-type Color3 = Vec3;
+pub type Point3 = Vec3;
+pub type Color3 = Vec3;
 
 impl Vec3 {
     pub fn zero() -> Self {
@@ -55,6 +55,13 @@ impl Vec3 {
 
     pub fn reflect(&self, normal: Vec3) -> Self {
         *self - 2.0 * self.dot(normal) * normal
+    }
+
+    pub fn refract(&self, normal: Vec3, etai_over_etat: f64) -> Self {
+        let cos_theta = normal.dot(-*self);
+        let r_out_parallel = etai_over_etat * (*self + cos_theta * normal);
+        let r_out_perp = -(1.0 - r_out_parallel.length_squared()).sqrt() * normal;
+        r_out_parallel + r_out_perp
     }
 
     pub fn unit_vector(&self) -> Self {

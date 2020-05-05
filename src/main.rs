@@ -58,27 +58,41 @@ fn main() {
     let brown_diffuse = Arc::new(Lambertian::from_albedo(Vec3(0.8, 0.8, 0.0)));
     let metal1 = Arc::new(Metal::new(Vec3(0.8, 0.6, 0.2), 1.0));
     let metal2 = Arc::new(Metal::new(Vec3(0.8, 0.8, 0.8), 0.3));
+    let glass = Arc::new(Dielectric::new(1.5));
 
-    world.add(Arc::new(Sphere::new(
-        Vec3(0.0, 0.0, -1.0),
-        0.5,
-        red_diffuse.clone(),
-    )));
+    // Floor
     world.add(Arc::new(Sphere::new(
         Vec3(0.0, -100.5, -1.0),
         100.0,
         brown_diffuse.clone(),
     )));
+
+    // Center
+    world.add(Arc::new(Sphere::new(
+        Vec3(0.0, 0.0, -1.0),
+        0.5,
+        red_diffuse.clone(),
+    )));
+
+    // Right
     world.add(Arc::new(Sphere::new(
         Vec3(1.0, 0.0, -1.0),
         0.5,
         metal1.clone(),
     )));
+
+    // Left
     world.add(Arc::new(Sphere::new(
         Vec3(-1.0, 0.0, -1.0),
         0.5,
-        metal2.clone(),
+        glass.clone(),
     )));
+    world.add(Arc::new(Sphere::new(
+        Vec3(-1.0, 0.0, -1.0),
+        -0.45,
+        glass.clone(),
+    )));
+
     let world: Arc<dyn Hittable> = Arc::new(world);
 
     let camera = Camera::default();
