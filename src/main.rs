@@ -84,18 +84,26 @@ fn main() {
     // Left
     world.add(Arc::new(Sphere::new(
         Vec3(-1.0, 0.0, -1.0),
-        0.5,
+        0.45,
         glass.clone(),
     )));
     world.add(Arc::new(Sphere::new(
         Vec3(-1.0, 0.0, -1.0),
-        -0.45,
+        -0.4,
         glass.clone(),
     )));
 
     let world: Arc<dyn Hittable> = Arc::new(world);
 
-    let camera = Camera::default();
+    let camera = Camera::new(
+        (
+            Vec3(-2.0, 2.0, 1.0),
+            Vec3(0.0, 0.0, -1.0),
+            Vec3(0.0, 1.0, 0.0),
+        ),
+        20.0,
+        image_width as f64 / image_height as f64,
+    );
 
     for j in 0..image_height {
         for i in 0..image_width {
