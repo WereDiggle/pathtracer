@@ -4,7 +4,7 @@ use crate::hit::*;
 use crate::ray::*;
 
 pub struct HitList {
-    objects: Vec<Arc<dyn Hittable>>,
+    objects: Vec<Arc<dyn Hittable + Send + Sync>>,
 }
 
 impl HitList {
@@ -14,7 +14,7 @@ impl HitList {
         }
     }
 
-    pub fn add(&mut self, object: Arc<dyn Hittable>) {
+    pub fn add(&mut self, object: Arc<dyn Hittable + Send + Sync>) {
         self.objects.push(object)
     }
 

@@ -93,6 +93,13 @@ impl Vec3 {
         Vec3(r * a.cos(), r * a.sin(), z)
     }
 
+    pub fn random_in_unit_disk() -> Self {
+        let mut rng = thread_rng();
+        let angle = rng.gen_range(0.0, std::f64::consts::PI * 2.0);
+        let length: f64 = rng.gen();
+        Vec3(length * angle.cos(), length * angle.sin(), 0.0)
+    }
+
     pub fn random_in_hemisphere(normal: Vec3) -> Self {
         let in_unit_sphere = Self::random_in_unit_sphere();
         if normal.dot(in_unit_sphere) > 0.0 {

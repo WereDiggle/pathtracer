@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use image::*;
 use rand::random;
+use rand::Rng;
 
 mod camera;
 mod hit;
@@ -11,6 +12,7 @@ mod ray;
 mod sphere;
 mod util;
 mod vec3;
+mod worker;
 
 pub use camera::*;
 pub use hit::*;
@@ -20,8 +22,56 @@ pub use ray::*;
 pub use sphere::*;
 pub use util::*;
 pub use vec3::*;
+pub use worker::*;
 
-fn ray_color(ray: Ray, world: &Arc<dyn Hittable>, depth: u32) -> Vec3 {
+fn main() {
+    let config = Config {
+        image_width: 1920,
+        image_height: 1080,
+        samples_per_pixel: 100,
+        max_depth: 50,
+    };
+
+    let mut image_buffer = DynamicImage::new_rgb8(config.image_width, config.image_height).to_rgb();
+
+    let mut progress_bar = progress::Bar::new();
+    progress_bar.set_job_title("Sending Jobs...");
+
+    let world = random_scene();
+
+    let lookfrom = Vec3(13.0, 2.0, 3.0);
+    let lookat = Vec3(0.0, 0.0, 0.0);
+    let camera = Arc::new(Camera::new(
+        (lookfrom, lookat, Vec3(0.0, 1.0, 0.0)),
+        20.0,
+        config.image_width as f64 / config.image_height as f64,
+        0.1,
+        10.0,
+    ));
+
+    let worker_pool = WorkerPool::spawn(12, world, camera, config.clone());
+
+    for v in 0..config.image_height {
+        for u in 0..config.image_width {
+            worker_pool.send_job(u, v);
+            let progress = ((v * config.image_width + u) * 100)
+                / (config.image_height * config.image_width - 1);
+            progress_bar.reach_percent(progress as i32);
+        }
+    }
+
+    progress_bar.set_job_title("Sending Rendering...");
+    for prog in 0..(config.image_height * config.image_width) {
+        let (x, y, color) = worker_pool.recv_color();
+        image_buffer.put_pixel(x, config.image_height - 1 - y, color.into());
+        let progress = (prog * 100) / (config.image_height * config.image_width - 1);
+        progress_bar.reach_percent(progress as i32);
+    }
+
+    image_buffer.save("output/test.png").unwrap();
+}
+
+fn ray_color(ray: Ray, world: &Arc<dyn Hittable + Send + Sync>, depth: u32) -> Vec3 {
     // Recursive base case
     if depth == 0 {
         return Vec3::zero();
@@ -41,86 +91,73 @@ fn ray_color(ray: Ray, world: &Arc<dyn Hittable>, depth: u32) -> Vec3 {
     (1.0 - t) * Vec3(1.0, 1.0, 1.0) + t * Vec3(0.5, 0.7, 1.0)
 }
 
-fn main() {
-    let image_width: u32 = 200;
-    let image_height: u32 = 100;
-    let samples_per_pixel: u32 = 100;
-    let max_depth: u32 = 50;
-
-    let mut image_buffer = DynamicImage::new_rgb8(image_width, image_height).to_rgb();
-
-    let mut progress_bar = progress::Bar::new();
-    progress_bar.set_job_title("Rendering...");
-
+pub fn random_scene() -> Arc<dyn Hittable + Send + Sync> {
     let mut world = HitList::new();
 
-    let red_diffuse = Arc::new(Lambertian::from_albedo(Vec3(0.7, 0.3, 0.3)));
-    let brown_diffuse = Arc::new(Lambertian::from_albedo(Vec3(0.8, 0.8, 0.0)));
-    let metal1 = Arc::new(Metal::new(Vec3(0.8, 0.6, 0.2), 1.0));
-    let metal2 = Arc::new(Metal::new(Vec3(0.8, 0.8, 0.8), 0.3));
-    let glass = Arc::new(Dielectric::new(1.5));
-
-    // Floor
     world.add(Arc::new(Sphere::new(
-        Vec3(0.0, -100.5, -1.0),
-        100.0,
-        brown_diffuse.clone(),
+        Vec3(0.0, -1000.0, 0.0),
+        1000.0,
+        Arc::new(Lambertian::from_albedo(Vec3(0.5, 0.5, 0.5))),
     )));
 
-    // Center
-    world.add(Arc::new(Sphere::new(
-        Vec3(0.0, 0.0, -1.0),
-        0.5,
-        red_diffuse.clone(),
-    )));
+    let mut rng = rand::thread_rng();
 
-    // Right
-    world.add(Arc::new(Sphere::new(
-        Vec3(1.0, 0.0, -1.0),
-        0.5,
-        metal1.clone(),
-    )));
-
-    // Left
-    world.add(Arc::new(Sphere::new(
-        Vec3(-1.0, 0.0, -1.0),
-        0.45,
-        glass.clone(),
-    )));
-    world.add(Arc::new(Sphere::new(
-        Vec3(-1.0, 0.0, -1.0),
-        -0.4,
-        glass.clone(),
-    )));
-
-    let world: Arc<dyn Hittable> = Arc::new(world);
-
-    let camera = Camera::new(
-        (
-            Vec3(-2.0, 2.0, 1.0),
-            Vec3(0.0, 0.0, -1.0),
-            Vec3(0.0, 1.0, 0.0),
-        ),
-        20.0,
-        image_width as f64 / image_height as f64,
-    );
-
-    for j in 0..image_height {
-        for i in 0..image_width {
-            let mut total_color = Vec3::zero();
-            for _ in 0..samples_per_pixel {
-                let u = (i as f64 + random::<f64>()) / image_width as f64;
-                let v = (j as f64 + random::<f64>()) / image_height as f64;
-                let r = camera.get_ray(u, v);
-                total_color += ray_color(r, &world, max_depth);
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat: f64 = rng.gen();
+            let center = Vec3(
+                0.9 * rng.gen::<f64>() + a as f64,
+                0.2,
+                0.9 * rng.gen::<f64>() + b as f64,
+            );
+            if (center - Vec3(4.0, 0.2, 0.0)).length() > 0.9 {
+                if choose_mat < 0.7 {
+                    let albedo = Vec3::random() * Vec3::random();
+                    world.add(Arc::new(Sphere::new(
+                        center,
+                        0.2,
+                        Arc::new(Lambertian::from_albedo(albedo)),
+                    )));
+                } else if choose_mat < 0.85 {
+                    let albedo = Vec3::random_range(0.5, 1.0);
+                    let fuzz = rng.gen_range(0.0, 0.5);
+                    world.add(Arc::new(Sphere::new(
+                        center,
+                        0.2,
+                        Arc::new(Metal::new(albedo, fuzz)),
+                    )));
+                } else {
+                    let thickness: f64 = rng.gen_range(0.02, 0.1);
+                    world.add(Arc::new(Sphere::new(
+                        center,
+                        0.2,
+                        Arc::new(Dielectric::new(1.5)),
+                    )));
+                    world.add(Arc::new(Sphere::new(
+                        center,
+                        thickness - 0.2,
+                        Arc::new(Dielectric::new(1.5)),
+                    )));
+                }
             }
-            let final_color = total_color / samples_per_pixel as f64;
-
-            image_buffer.put_pixel(i, image_height - 1 - j, final_color.into());
-            let progress = ((j * image_width + i) * 100) / (image_height * image_width - 1);
-            progress_bar.reach_percent(progress as i32);
         }
     }
 
-    image_buffer.save("output/test.png").unwrap();
+    world.add(Arc::new(Sphere::new(
+        Vec3(0.0, 1.0, 0.0),
+        1.0,
+        Arc::new(Dielectric::new(1.5)),
+    )));
+    world.add(Arc::new(Sphere::new(
+        Vec3(-4.0, 1.0, 0.0),
+        1.0,
+        Arc::new(Lambertian::from_albedo(Vec3(0.4, 0.2, 0.1))),
+    )));
+    world.add(Arc::new(Sphere::new(
+        Vec3(4.0, 1.0, 0.0),
+        1.0,
+        Arc::new(Metal::new(Vec3(0.7, 0.6, 0.5), 0.0)),
+    )));
+
+    Arc::new(world)
 }

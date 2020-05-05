@@ -4,11 +4,11 @@ use std::sync::Arc;
 pub struct Sphere {
     pub center: Vec3,
     pub radius: f64,
-    pub material: Arc<dyn Material>,
+    pub material: Arc<dyn Material + Send + Sync>,
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f64, material: Arc<dyn Material>) -> Self {
+    pub fn new(center: Vec3, radius: f64, material: Arc<dyn Material + Send + Sync>) -> Self {
         Self {
             center,
             radius,
