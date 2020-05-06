@@ -1,3 +1,5 @@
+use rand::thread_rng;
+
 use crate::*;
 
 pub struct Camera {
@@ -9,6 +11,8 @@ pub struct Camera {
     v: Vec3,
     w: Vec3,
     lens_radius: f64,
+    time_start: f64,
+    time_end: f64,
 }
 
 impl Camera {
@@ -18,6 +22,7 @@ impl Camera {
         aspect_ratio: f64,
         aperture: f64,
         focus_dist: f64,
+        (time_start, time_end): (f64, f64),
     ) -> Self {
         let lens_radius = aperture * 0.5;
 
@@ -41,6 +46,8 @@ impl Camera {
             u,
             v,
             lens_radius,
+            time_start,
+            time_end,
         }
     }
 
@@ -51,6 +58,7 @@ impl Camera {
         Ray::new(
             new_origin,
             self.lower_left_corner + s * self.horizontal + t * self.vertical - new_origin,
+            thread_rng().gen_range(self.time_start, self.time_end),
         )
     }
 }

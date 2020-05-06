@@ -26,8 +26,8 @@ pub use worker::*;
 
 fn main() {
     let config = Config {
-        image_width: 192,
-        image_height: 108,
+        image_width: 1000,
+        image_height: 500,
         samples_per_pixel: 100,
         max_depth: 50,
     };
@@ -46,6 +46,7 @@ fn main() {
         config.image_width as f64 / config.image_height as f64,
         0.1,
         10.0,
+        (0.0, 1.0),
     ));
 
     let worker_pool = WorkerPool::spawn(11, world, camera, config.clone());
@@ -115,31 +116,28 @@ pub fn random_scene() -> Arc<dyn Hittable + Send + Sync> {
             if (center - Vec3(4.0, 0.2, 0.0)).length() > 0.9 {
                 if choose_mat < 0.7 {
                     let albedo = Vec3::random() * Vec3::random();
-                    world.add(Arc::new(Sphere::new(
-                        center,
-                        0.2,
-                        Arc::new(Lambertian::from_albedo(albedo)),
-                    )));
+                    world.add(Arc::new(
+                        Sphere::new(center, 0.2, Arc::new(Lambertian::from_albedo(albedo)))
+                            .movement(center + Vec3(0.0, rng.gen_range(0.0, 0.5), 0.0), (0.0, 1.0)),
+                    ));
                 } else if choose_mat < 0.85 {
                     let albedo = Vec3::random_range(0.5, 1.0);
                     let fuzz = rng.gen_range(0.0, 0.5);
-                    world.add(Arc::new(Sphere::new(
-                        center,
-                        0.2,
-                        Arc::new(Metal::new(albedo, fuzz)),
-                    )));
+                    world.add(Arc::new(
+                        Sphere::new(center, 0.2, Arc::new(Metal::new(albedo, fuzz)))
+                            .movement(center + Vec3(0.0, rng.gen_range(0.0, 0.5), 0.0), (0.0, 1.0)),
+                    ));
                 } else {
+                    let new_center = center + Vec3(0.0, rng.gen_range(0.0, 0.5), 0.0);
                     let thickness: f64 = rng.gen_range(0.02, 0.1);
-                    world.add(Arc::new(Sphere::new(
-                        center,
-                        0.2,
-                        Arc::new(Dielectric::new(1.5)),
-                    )));
-                    world.add(Arc::new(Sphere::new(
-                        center,
-                        thickness - 0.2,
-                        Arc::new(Dielectric::new(1.5)),
-                    )));
+                    world.add(Arc::new(
+                        Sphere::new(center, 0.2, Arc::new(Dielectric::new(1.5)))
+                            .movement(new_center, (0.0, 1.0)),
+                    ));
+                    world.add(Arc::new(
+                        Sphere::new(center, thickness - 0.2, Arc::new(Dielectric::new(1.5)))
+                            .movement(new_center, (0.0, 1.0)),
+                    ));
                 }
             }
         }
