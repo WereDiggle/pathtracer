@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
-use crate::hit::*;
-use crate::ray::*;
+use crate::*;
 
 pub struct HitList {
-    objects: Vec<Arc<dyn Hittable + Send + Sync>>,
+    pub objects: Vec<Arc<dyn Hittable + Send + Sync>>,
 }
 
 impl HitList {
@@ -37,4 +36,32 @@ impl Hittable for HitList {
 
         final_hit_record
     }
+
+    fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB> {
+        bounding_box(&self.objects, (t0, t1))
+    }
+}
+
+pub fn bounding_box(
+    objects: &Vec<Arc<dyn Hittable + Send + Sync>>,
+    time: (f64, f64),
+) -> Option<AABB> {
+    if objects.is_empty() {
+        return None;
+    }
+
+    let mut final_box: Option<AABB> = None;
+
+    for object in objects.iter() {
+        if let Some(new_box) = object.bounding_box(time.0, time.1) {
+            if let Some(cur_box) = final_box {
+                final_box = Some(cur_box.surrounding_box(&new_box));
+            } else {
+                final_box = Some(new_box);
+            }
+        } else {
+            return None;
+        }
+    }
+    final_box
 }

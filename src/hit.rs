@@ -34,4 +34,6 @@ impl HitRecord {
 
 pub trait Hittable {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
+
+    fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB>;
 }

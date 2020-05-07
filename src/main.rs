@@ -1,9 +1,12 @@
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use image::*;
 use rand::random;
 use rand::Rng;
 
+mod aabb;
+mod bvh;
 mod camera;
 mod hit;
 mod hit_list;
@@ -14,6 +17,8 @@ mod util;
 mod vec3;
 mod worker;
 
+pub use aabb::*;
+pub use bvh::*;
 pub use camera::*;
 pub use hit::*;
 pub use hit_list::*;
@@ -26,8 +31,8 @@ pub use worker::*;
 
 fn main() {
     let config = Config {
-        image_width: 1000,
-        image_height: 500,
+        image_width: 190,
+        image_height: 108,
         samples_per_pixel: 100,
         max_depth: 50,
     };
@@ -51,6 +56,7 @@ fn main() {
 
     let worker_pool = WorkerPool::spawn(11, world, camera, config.clone());
     let worker_pool = Arc::new(worker_pool);
+    let render_start = Instant::now();
 
     {
         let worker_pool = worker_pool.clone();
@@ -70,6 +76,8 @@ fn main() {
         let progress = (prog * 100) / (config.image_height * config.image_width - 1);
         progress_bar.reach_percent(progress as i32);
     }
+
+    println!("Render took {} seconds", render_start.elapsed().as_secs());
 
     image_buffer.save("output/test.png").unwrap();
 }
@@ -105,8 +113,8 @@ pub fn random_scene() -> Arc<dyn Hittable + Send + Sync> {
 
     let mut rng = rand::thread_rng();
 
-    for a in -11..11 {
-        for b in -11..11 {
+    for a in -15..15 {
+        for b in -15..15 {
             let choose_mat: f64 = rng.gen();
             let center = Vec3(
                 0.9 * rng.gen::<f64>() + a as f64,
@@ -114,7 +122,14 @@ pub fn random_scene() -> Arc<dyn Hittable + Send + Sync> {
                 0.9 * rng.gen::<f64>() + b as f64,
             );
             if (center - Vec3(4.0, 0.2, 0.0)).length() > 0.9 {
-                if choose_mat < 0.7 {
+                if choose_mat < 0.4 {
+                    let albedo = Vec3::random() * Vec3::random();
+                    world.add(Arc::new(Sphere::new(
+                        center,
+                        0.2,
+                        Arc::new(Lambertian::from_albedo(albedo)),
+                    )));
+                } else if choose_mat < 0.7 {
                     let albedo = Vec3::random() * Vec3::random();
                     world.add(Arc::new(
                         Sphere::new(center, 0.2, Arc::new(Lambertian::from_albedo(albedo)))
@@ -123,21 +138,23 @@ pub fn random_scene() -> Arc<dyn Hittable + Send + Sync> {
                 } else if choose_mat < 0.85 {
                     let albedo = Vec3::random_range(0.5, 1.0);
                     let fuzz = rng.gen_range(0.0, 0.5);
-                    world.add(Arc::new(
-                        Sphere::new(center, 0.2, Arc::new(Metal::new(albedo, fuzz)))
-                            .movement(center + Vec3(0.0, rng.gen_range(0.0, 0.5), 0.0), (0.0, 1.0)),
-                    ));
+                    world.add(Arc::new(Sphere::new(
+                        center,
+                        0.2,
+                        Arc::new(Metal::new(albedo, fuzz)),
+                    )));
                 } else {
-                    let new_center = center + Vec3(0.0, rng.gen_range(0.0, 0.5), 0.0);
                     let thickness: f64 = rng.gen_range(0.02, 0.1);
-                    world.add(Arc::new(
-                        Sphere::new(center, 0.2, Arc::new(Dielectric::new(1.5)))
-                            .movement(new_center, (0.0, 1.0)),
-                    ));
-                    world.add(Arc::new(
-                        Sphere::new(center, thickness - 0.2, Arc::new(Dielectric::new(1.5)))
-                            .movement(new_center, (0.0, 1.0)),
-                    ));
+                    world.add(Arc::new(Sphere::new(
+                        center,
+                        0.2,
+                        Arc::new(Dielectric::new(1.5)),
+                    )));
+                    world.add(Arc::new(Sphere::new(
+                        center,
+                        thickness - 0.2,
+                        Arc::new(Dielectric::new(1.5)),
+                    )));
                 }
             }
         }
@@ -158,6 +175,8 @@ pub fn random_scene() -> Arc<dyn Hittable + Send + Sync> {
         1.0,
         Arc::new(Metal::new(Vec3(0.7, 0.6, 0.5), 0.0)),
     )));
+
+    let world = BVH::from_hit_list(world, (0.0, 1.0));
 
     Arc::new(world)
 }
