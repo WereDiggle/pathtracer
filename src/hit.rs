@@ -8,6 +8,8 @@ pub struct HitRecord {
     pub normal: Vec3,
     pub distance: f64,
     pub front_face: bool,
+    pub u: f64,
+    pub v: f64,
 }
 
 impl HitRecord {
@@ -18,6 +20,8 @@ impl HitRecord {
             distance: 0.0,
             front_face: true,
             material,
+            u: 0.0,
+            v: 0.0,
         }
     }
 

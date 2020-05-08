@@ -16,6 +16,7 @@ mod hit_list;
 mod material;
 mod ray;
 mod sphere;
+mod texture;
 mod util;
 mod vec3;
 mod worker;
@@ -28,6 +29,7 @@ pub use hit_list::*;
 pub use material::*;
 pub use ray::*;
 pub use sphere::*;
+pub use texture::*;
 pub use util::*;
 pub use vec3::*;
 pub use worker::*;
@@ -36,7 +38,7 @@ fn main() {
     let config = Config {
         image_width: 1900,
         image_height: 1080,
-        samples_per_pixel: 100,
+        samples_per_pixel: 200,
         max_depth: 50,
     };
 
@@ -52,8 +54,8 @@ fn main() {
         (lookfrom, lookat, Vec3(0.0, 1.0, 0.0)),
         20.0,
         config.image_width as f64 / config.image_height as f64,
-        0.1,
-        50.0,
+        0.4,
+        (lookat - lookfrom).length(),
         (0.0, 1.0),
     ));
 
@@ -118,7 +120,7 @@ pub fn random_scene() -> Arc<dyn Hittable + Send + Sync> {
     world.add(Arc::new(Sphere::new(
         Vec3(0.0, -1000000.0, 0.0),
         1000000.0,
-        Arc::new(Lambertian::from_albedo(Vec3(0.8, 0.8, 0.8))),
+        Arc::new(Lambertian::from_rgb(0.8, 0.8, 0.8)),
     )));
 
     let mut rng = rand::thread_rng();
@@ -138,7 +140,7 @@ pub fn random_scene() -> Arc<dyn Hittable + Send + Sync> {
                 world.add(Arc::new(Sphere::new(
                     center,
                     sphere_size,
-                    Arc::new(Lambertian::from_albedo(albedo)),
+                    Arc::new(Lambertian::from_color3(albedo)),
                 )));
             } else if choose_mat < 0.85 {
                 let albedo = Vec3::random_range(0.5, 1.0);

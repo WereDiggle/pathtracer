@@ -7,20 +7,32 @@ pub trait Material {
 }
 
 pub struct Lambertian {
-    pub albedo: Vec3,
+    pub albedo: Arc<dyn Texture + Send + Sync>,
 }
 
 impl Lambertian {
-    pub fn from_albedo(albedo: Vec3) -> Self {
+    pub fn from_texture(albedo: Arc<dyn Texture + Send + Sync>) -> Self {
         Self { albedo }
+    }
+
+    pub fn from_rgb(r: f64, g: f64, b: f64) -> Self {
+        Self {
+            albedo: Arc::new(SolidColor::new(r, g, b)),
+        }
+    }
+
+    pub fn from_color3(color: Color3) -> Self {
+        Self {
+            albedo: Arc::new(SolidColor(color)),
+        }
     }
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord) -> Option<(Vec3, Ray)> {
-        let scatter_direction = hit_record.normal + Vec3::random_unit_vector();
-        let scatter_ray = Ray::new(hit_record.position, scatter_direction, ray_in.time);
-        let attenuation = self.albedo;
+    fn scatter(&self, ray_in: &Ray, hit: &HitRecord) -> Option<(Vec3, Ray)> {
+        let scatter_direction = hit.normal + Vec3::random_unit_vector();
+        let scatter_ray = Ray::new(hit.position, scatter_direction, ray_in.time);
+        let attenuation = self.albedo.value(hit.u, hit.v, &hit.position);
         Some((attenuation, scatter_ray))
     }
 }
