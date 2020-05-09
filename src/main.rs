@@ -14,6 +14,7 @@ mod camera;
 mod hit;
 mod hit_list;
 mod material;
+mod perlin;
 mod ray;
 mod sphere;
 mod texture;
@@ -27,6 +28,7 @@ pub use camera::*;
 pub use hit::*;
 pub use hit_list::*;
 pub use material::*;
+pub use perlin::*;
 pub use ray::*;
 pub use sphere::*;
 pub use texture::*;
@@ -46,7 +48,7 @@ fn main() {
 
     let mut progress_bar = progress::Bar::new();
     progress_bar.set_job_title("Rendering...");
-    let world = two_spheres();
+    let world = two_perlin_spheres();
 
     let lookfrom = Vec3(13.0, 2.0, 3.0);
     let lookat = Vec3(0.0, 0.0, 0.0);
@@ -112,6 +114,26 @@ fn ray_color(ray: Ray, world: &Arc<dyn Hittable + Send + Sync>, depth: u32) -> V
     let unit_direction: Vec3 = ray.direction.unit_vector();
     let t = 0.5 * (unit_direction.y() + 1.0);
     (1.0 - t) * Vec3(1.0, 1.0, 1.0) + t * Vec3(0.5, 0.7, 1.0)
+}
+
+type ThreadHittable = dyn Hittable + Send + Sync;
+
+pub fn two_perlin_spheres() -> Arc<ThreadHittable> {
+    let mut world = HitList::new();
+
+    let perlin_texture = Arc::new(NoiseTexture::new());
+    world.add(Arc::new(Sphere::new(
+        Vec3(0.0, -1000.0, 0.0),
+        1000.0,
+        Arc::new(Lambertian::from_texture(perlin_texture.clone())),
+    )));
+    world.add(Arc::new(Sphere::new(
+        Vec3(0.0, 2.0, 0.0),
+        2.0,
+        Arc::new(Lambertian::from_texture(perlin_texture.clone())),
+    )));
+
+    Arc::new(world)
 }
 
 pub fn random_scene() -> Arc<dyn Hittable + Send + Sync> {
