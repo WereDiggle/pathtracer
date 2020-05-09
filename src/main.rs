@@ -37,9 +37,10 @@ pub use vec3::*;
 pub use worker::*;
 
 fn main() {
+    let quality = 3;
     let config = Config {
-        image_width: 192,
-        image_height: 108,
+        image_width: 192 * quality,
+        image_height: 108 * quality,
         samples_per_pixel: 100,
         max_depth: 50,
     };
@@ -121,7 +122,7 @@ type ThreadHittable = dyn Hittable + Send + Sync;
 pub fn two_perlin_spheres() -> Arc<ThreadHittable> {
     let mut world = HitList::new();
 
-    let perlin_texture = Arc::new(NoiseTexture::new());
+    let perlin_texture = Arc::new(NoiseTexture::new(10.0));
     world.add(Arc::new(Sphere::new(
         Vec3(0.0, -1000.0, 0.0),
         1000.0,
