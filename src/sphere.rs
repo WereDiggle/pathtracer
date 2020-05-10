@@ -54,6 +54,9 @@ impl Hittable for Sphere {
                 hit_record.distance = distance;
                 let outward_normal = (hit_record.position - center) / self.radius;
                 hit_record.set_face_normal(r, outward_normal);
+                let (u, v) = get_sphere_uv(&((hit_record.position - center) / self.radius));
+                hit_record.u = u;
+                hit_record.v = v;
                 return Some(hit_record);
             }
         }
@@ -68,4 +71,15 @@ impl Hittable for Sphere {
         let bound_box_1 = AABB::new(center_1 - radius_vec, center_1 + radius_vec);
         Some(bound_box_0.surrounding_box(&bound_box_1))
     }
+}
+
+fn get_sphere_uv(p: &Vec3) -> (f64, f64) {
+    use std::f64::consts::{FRAC_1_PI, FRAC_PI_2, PI};
+    let phi = p.z().atan2(p.x());
+    let theta = p.y().asin();
+
+    (
+        1.0 - (phi + PI) * 0.5 * FRAC_1_PI,
+        (theta + FRAC_PI_2) * FRAC_1_PI,
+    )
 }

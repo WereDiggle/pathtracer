@@ -37,7 +37,7 @@ pub use vec3::*;
 pub use worker::*;
 
 fn main() {
-    let quality = 3;
+    let quality = 5;
     let config = Config {
         image_width: 192 * quality,
         image_height: 108 * quality,
@@ -49,9 +49,9 @@ fn main() {
 
     let mut progress_bar = progress::Bar::new();
     progress_bar.set_job_title("Rendering...");
-    let world = two_perlin_spheres();
+    let world = earth();
 
-    let lookfrom = Vec3(13.0, 2.0, 3.0);
+    let lookfrom = Vec3(0.0, 0.0, 15.0);
     let lookat = Vec3(0.0, 0.0, 0.0);
     let camera = Arc::new(Camera::new(
         (lookfrom, lookat, Vec3(0.0, 1.0, 0.0)),
@@ -118,6 +118,15 @@ fn ray_color(ray: Ray, world: &Arc<dyn Hittable + Send + Sync>, depth: u32) -> V
 }
 
 type ThreadHittable = dyn Hittable + Send + Sync;
+
+pub fn earth() -> Arc<ThreadHittable> {
+    let earth_texture =
+        ImageTexture::from_file(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/earthmap.jpg"));
+    let earth_surface = Lambertian::from_texture(Arc::new(earth_texture));
+    let globe = Sphere::new(Vec3::zero(), 2.0, Arc::new(earth_surface));
+
+    Arc::new(globe)
+}
 
 pub fn two_perlin_spheres() -> Arc<ThreadHittable> {
     let mut world = HitList::new();
