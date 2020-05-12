@@ -3,7 +3,13 @@ use rand::random;
 use crate::*;
 
 pub trait Material {
-    fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord) -> Option<(Vec3, Ray)>;
+    fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord) -> Option<(Vec3, Ray)> {
+        None
+    }
+
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color3 {
+        Vec3::zero()
+    }
 }
 
 pub struct Lambertian {
@@ -109,5 +115,21 @@ impl Material for Dielectric {
             attenuation,
             Ray::new(hit_record.position, scatter_direction, ray_in.time),
         ))
+    }
+}
+
+pub struct DiffuseLight {
+    emit: Arc<dyn Texture + Send + Sync>,
+}
+
+impl DiffuseLight {
+    pub fn from_texture(emit: Arc<dyn Texture + Send + Sync>) -> Self {
+        Self { emit }
+    }
+}
+
+impl Material for DiffuseLight {
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color3 {
+        self.emit.value(u, v, p)
     }
 }

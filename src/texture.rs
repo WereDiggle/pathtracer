@@ -32,7 +32,11 @@ impl CheckerTexture {
         odd: Arc<dyn Texture + Send + Sync>,
         even: Arc<dyn Texture + Send + Sync>,
     ) -> Self {
-        Self { size, odd, even }
+        Self {
+            size: 1.0 / size,
+            odd,
+            even,
+        }
     }
 }
 

@@ -34,6 +34,10 @@ impl HitRecord {
             -outward_normal
         }
     }
+
+    pub fn emitted(&self) -> Color3 {
+        self.material.emitted(self.u, self.v, &self.position)
+    }
 }
 
 pub trait Hittable {

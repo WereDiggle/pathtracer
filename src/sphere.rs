@@ -18,6 +18,14 @@ impl Sphere {
         }
     }
 
+    pub fn arc_new(
+        center: Point3,
+        radius: f64,
+        material: Arc<dyn Material + Send + Sync>,
+    ) -> Arc<Self> {
+        Arc::new(Self::new(center, radius, material))
+    }
+
     pub fn movement(mut self, center: Point3, time: (f64, f64)) -> Self {
         self.center.1 = center;
         self.time = time;
