@@ -43,7 +43,7 @@ fn main() {
     let config = Config {
         image_width: 192 * quality,
         image_height: 108 * quality,
-        samples_per_pixel: 400,
+        samples_per_pixel: 100,
         max_depth: 50,
     };
 
@@ -53,7 +53,7 @@ fn main() {
     progress_bar.set_job_title("Rendering...");
 
     // World generation
-    let (world, camera) = simple_light(&config);
+    let (world, camera) = random_scene(&config);
 
     let worker_pool = WorkerPool::spawn(11, world, camera, config.clone());
     let worker_pool = Arc::new(worker_pool);
@@ -179,7 +179,7 @@ pub fn simple_light(config: &Config) -> (Arc<dyn Hittable + Send + Sync>, Arc<Ca
 }
 
 pub fn random_scene(config: &Config) -> (Arc<dyn Hittable + Send + Sync>, Arc<Camera>) {
-    let lookfrom = Vec3(30.0, 10.0, 20.0);
+    let lookfrom = Vec3(30.0, 1.0, 20.0);
     let lookat = Vec3(0.0, 1.0, 0.0);
     let camera = Arc::new(Camera::new(
         (lookfrom, lookat, Vec3(0.0, 1.0, 0.0)),
@@ -192,18 +192,19 @@ pub fn random_scene(config: &Config) -> (Arc<dyn Hittable + Send + Sync>, Arc<Ca
 
     let mut world = HitList::new();
 
-    let checkered = CheckerTexture::new(
+    let checkered = Arc::new(CheckerTexture::new(
         5.0,
         Arc::new(SolidColor::new(0.2, 0.3, 0.1)),
         Arc::new(SolidColor::new(0.9, 0.9, 0.9)),
-    );
+    ));
+    let noise = Arc::new(NoiseTexture::new(1.0));
     let light = Arc::new(DiffuseLight::from_texture(Arc::new(SolidColor::new(
         1.0, 1.0, 1.0,
     ))));
     world.add(Arc::new(Sphere::new(
         Vec3(0.0, -1000.0, 0.0),
         1000.0,
-        Arc::new(Lambertian::from_texture(Arc::new(checkered))),
+        Arc::new(Lambertian::from_texture(checkered.clone())),
     )));
 
     world.add(Arc::new(Sphere::new(
@@ -211,11 +212,11 @@ pub fn random_scene(config: &Config) -> (Arc<dyn Hittable + Send + Sync>, Arc<Ca
         1.0,
         Arc::new(Dielectric::new(1.5)),
     )));
-    world.add(Arc::new(Sphere::new(
-        Vec3(0.0, 2.0, 6.0),
-        2.0,
-        light.clone(),
-    )));
+    //world.add(Arc::new(Sphere::new(
+    //    Vec3(0.0, 2.0, 6.0),
+    //    2.0,
+    //    light.clone(),
+    //)));
     world.add(Arc::new(Sphere::new(
         Vec3(-4.0, 1.0, 0.0),
         1.0,
@@ -227,7 +228,8 @@ pub fn random_scene(config: &Config) -> (Arc<dyn Hittable + Send + Sync>, Arc<Ca
         Arc::new(Metal::new(Vec3(0.7, 0.6, 0.5), 0.0)),
     )));
 
-    let world = BVH::from_hit_list(world, (0.0, 1.0));
+    world.add(SkySphere::from_texture(noise.clone()));
+    //let world = BVH::from_hit_list(world, (0.0, 1.0));
 
     (Arc::new(world), camera)
 }

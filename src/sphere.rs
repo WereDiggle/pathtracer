@@ -91,3 +91,43 @@ fn get_sphere_uv(p: &Vec3) -> (f64, f64) {
         (theta + FRAC_PI_2) * FRAC_1_PI,
     )
 }
+
+pub struct SkySphere {
+    pub material: Arc<dyn Material + Send + Sync>,
+}
+
+impl SkySphere {
+    pub fn from_texture(texture: Arc<dyn Texture + Send + Sync>) -> Arc<Self> {
+        Arc::new(Self {
+            material: Arc::new(DiffuseLight::from_texture(texture)),
+        })
+    }
+}
+
+impl Hittable for SkySphere {
+    fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB> {
+        None
+    }
+
+    fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
+        if t_max == std::f64::INFINITY {
+            let mut hit = HitRecord::from_material(self.material.clone());
+            let (u, v) = get_sphere_uv(&r.direction);
+            hit.normal = -r.direction;
+            hit.position = r.direction;
+            hit.u = u;
+            hit.v = v;
+            Some(HitRecord {
+                material: self.material.clone(),
+                normal: -r.direction,
+                front_face: true,
+                position: r.direction,
+                distance: std::f64::INFINITY,
+                u,
+                v,
+            })
+        } else {
+            None
+        }
+    }
+}
