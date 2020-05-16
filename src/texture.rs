@@ -71,6 +71,7 @@ impl Texture for NoiseTexture {
         Vec3(1.0, 1.0, 1.0)
             * 0.5
             * (1.0 + (self.scale * p.z() + 10.0 * self.perlin.turb(p, 7)).sin())
+        //* (1.0 + self.perlin.turb(&(self.scale * *p), 7))
     }
 }
 

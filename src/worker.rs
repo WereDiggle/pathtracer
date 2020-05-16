@@ -13,12 +13,7 @@ pub struct WorkerPool {
 }
 
 impl WorkerPool {
-    pub fn spawn(
-        num_workers: usize,
-        world: Arc<dyn Hittable + Send + Sync>,
-        camera: Arc<Camera>,
-        config: Config,
-    ) -> Self {
+    pub fn spawn(num_workers: usize, world: World, camera: Arc<Camera>, config: Config) -> Self {
         let (color_tx, color_rx) = unbounded::<(u32, u32, Color3)>();
         let (job_tx, job_rx) = unbounded::<(u32, u32)>();
         let mut workers: Vec<JoinHandle<()>> = Vec::with_capacity(num_workers);
@@ -50,7 +45,7 @@ impl WorkerPool {
 pub struct Worker {
     pub job_rx: Receiver<(u32, u32)>,
     pub color_tx: Sender<(u32, u32, Color3)>,
-    pub world: Arc<dyn Hittable + Send + Sync>,
+    pub world: World,
     pub camera: Arc<Camera>,
     pub config: Config,
 }
@@ -59,7 +54,7 @@ impl Worker {
     pub fn spawn(
         job_rx: Receiver<(u32, u32)>,
         color_tx: Sender<(u32, u32, Color3)>,
-        world: Arc<dyn Hittable + Send + Sync>,
+        world: World,
         camera: Arc<Camera>,
         config: Config,
     ) -> JoinHandle<()> {
@@ -82,7 +77,7 @@ impl Worker {
                 let u = (x as f64 + random::<f64>()) / self.config.image_width as f64;
                 let v = (y as f64 + random::<f64>()) / self.config.image_height as f64;
                 let r = self.camera.get_ray(u, v);
-                total_color += ray_color(r, &self.world, self.config.max_depth);
+                total_color += self.world.ray_color(r, self.config.max_depth);
             }
             let final_color = total_color / self.config.samples_per_pixel as f64;
             self.color_tx.send((x, y, final_color)).unwrap();

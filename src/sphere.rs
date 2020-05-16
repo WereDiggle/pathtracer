@@ -81,7 +81,7 @@ impl Hittable for Sphere {
     }
 }
 
-fn get_sphere_uv(p: &Vec3) -> (f64, f64) {
+pub fn get_sphere_uv(p: &Vec3) -> (f64, f64) {
     use std::f64::consts::{FRAC_1_PI, FRAC_PI_2, PI};
     let phi = p.z().atan2(p.x());
     let theta = p.y().asin();

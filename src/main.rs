@@ -22,6 +22,7 @@ mod texture;
 mod util;
 mod vec3;
 mod worker;
+mod world;
 
 pub use aabb::*;
 pub use bvh::*;
@@ -37,6 +38,7 @@ pub use texture::*;
 pub use util::*;
 pub use vec3::*;
 pub use worker::*;
+pub use world::*;
 
 fn main() {
     let quality = 2;
@@ -53,7 +55,7 @@ fn main() {
     progress_bar.set_job_title("Rendering...");
 
     // World generation
-    let (world, camera) = random_scene(&config);
+    let (world, camera) = simple_light(&config);
 
     let worker_pool = WorkerPool::spawn(11, world, camera, config.clone());
     let worker_pool = Arc::new(worker_pool);
@@ -90,25 +92,6 @@ fn main() {
         .unwrap();
 }
 
-fn ray_color(ray: Ray, world: &Arc<dyn Hittable + Send + Sync>, depth: u32) -> Vec3 {
-    // Recursive base case
-    if depth == 0 {
-        return Vec3::zero();
-    }
-
-    // We hit something
-    if let Some(hit_record) = world.hit(&ray, 0.001, std::f64::INFINITY) {
-        if let Some((attenuation, scatter_ray)) = hit_record.material.scatter(&ray, &hit_record) {
-            return attenuation * ray_color(scatter_ray, world, depth - 1);
-        }
-        return hit_record.emitted();
-    }
-
-    // Off into infinity
-    //Vec3(0.1, 0.1, 0.1)
-    Vec3::zero()
-}
-
 type ThreadHittable = dyn Hittable + Send + Sync;
 
 pub fn earth() -> Arc<ThreadHittable> {
@@ -138,7 +121,7 @@ pub fn two_perlin_spheres() -> Arc<ThreadHittable> {
     Arc::new(world)
 }
 
-pub fn simple_light(config: &Config) -> (Arc<dyn Hittable + Send + Sync>, Arc<Camera>) {
+pub fn simple_light(config: &Config) -> (World, Arc<Camera>) {
     let lookfrom = Vec3(30.0, 0.0, 5.0) + Vec3(0.0, 4.0, 0.0);
     let lookat = Vec3(0.0, 0.0, 0.0);
     let camera = Arc::new(Camera::new(
@@ -168,17 +151,20 @@ pub fn simple_light(config: &Config) -> (Arc<dyn Hittable + Send + Sync>, Arc<Ca
         4.0, 4.0, 4.0,
     ))));
     world.add(Sphere::arc_new(Vec3(0.0, 7.0, 0.0), 2.0, difflight.clone()));
-    world.add(Arc::new(ZRectangle::new(
+    world.add(Arc::new(AxisRectangle::new(
+        "Z",
         (3.0, 5.0),
         (1.0, 3.0),
-        -2.0,
+        (-2.0, -2.0),
         difflight.clone(),
     )));
 
-    (Arc::new(world), camera)
+    let world = World::new(Arc::new(world), Arc::new(SolidColor::new(0.0, 0.0, 0.0)));
+
+    (world, camera)
 }
 
-pub fn random_scene(config: &Config) -> (Arc<dyn Hittable + Send + Sync>, Arc<Camera>) {
+pub fn random_scene(config: &Config) -> (World, Arc<Camera>) {
     let lookfrom = Vec3(30.0, 1.0, 20.0);
     let lookat = Vec3(0.0, 1.0, 0.0);
     let camera = Arc::new(Camera::new(
@@ -197,7 +183,7 @@ pub fn random_scene(config: &Config) -> (Arc<dyn Hittable + Send + Sync>, Arc<Ca
         Arc::new(SolidColor::new(0.2, 0.3, 0.1)),
         Arc::new(SolidColor::new(0.9, 0.9, 0.9)),
     ));
-    let noise = Arc::new(NoiseTexture::new(1.0));
+    let noise = Arc::new(NoiseTexture::new(10.0));
     let light = Arc::new(DiffuseLight::from_texture(Arc::new(SolidColor::new(
         1.0, 1.0, 1.0,
     ))));
@@ -228,10 +214,11 @@ pub fn random_scene(config: &Config) -> (Arc<dyn Hittable + Send + Sync>, Arc<Ca
         Arc::new(Metal::new(Vec3(0.7, 0.6, 0.5), 0.0)),
     )));
 
-    world.add(SkySphere::from_texture(noise.clone()));
+    //world.add(SkySphere::from_texture(noise.clone()));
     //let world = BVH::from_hit_list(world, (0.0, 1.0));
+    let world = World::new(Arc::new(world), noise.clone());
 
-    (Arc::new(world), camera)
+    (world, camera)
 }
 
 pub fn two_spheres() -> Arc<dyn Hittable + Send + Sync> {
