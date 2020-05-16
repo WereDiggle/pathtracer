@@ -45,3 +45,26 @@ pub trait Hittable {
 
     fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB>;
 }
+
+pub struct FlipFace(pub Arc<dyn Hittable + Send + Sync>);
+
+impl FlipFace {
+    pub fn new(object: Arc<dyn Hittable + Send + Sync>) -> Arc<Self> {
+        Arc::new(Self(object))
+    }
+}
+
+impl Hittable for FlipFace {
+    fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
+        self.0.hit(r, t_min, t_max).and_then(|hit| {
+            Some(HitRecord {
+                front_face: !hit.front_face,
+                ..hit
+            })
+        })
+    }
+
+    fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB> {
+        self.0.bounding_box(t0, t1)
+    }
+}

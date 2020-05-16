@@ -9,8 +9,8 @@ pub trait Texture {
 pub struct SolidColor(pub Color3);
 
 impl SolidColor {
-    pub fn new(r: f64, g: f64, b: f64) -> Self {
-        Self(Vec3(r, g, b))
+    pub fn new(r: f64, g: f64, b: f64) -> Arc<Self> {
+        Arc::new(Self(Vec3(r, g, b)))
     }
 }
 
@@ -31,12 +31,12 @@ impl CheckerTexture {
         size: f64,
         odd: Arc<dyn Texture + Send + Sync>,
         even: Arc<dyn Texture + Send + Sync>,
-    ) -> Self {
-        Self {
+    ) -> Arc<Self> {
+        Arc::new(Self {
             size: 1.0 / size,
             odd,
             even,
-        }
+        })
     }
 }
 
@@ -58,11 +58,11 @@ pub struct NoiseTexture {
 }
 
 impl NoiseTexture {
-    pub fn new(scale: f64) -> Self {
-        Self {
+    pub fn new(scale: f64) -> Arc<Self> {
+        Arc::new(Self {
             perlin: Perlin::new(),
             scale,
-        }
+        })
     }
 }
 
@@ -83,7 +83,7 @@ pub struct ImageTexture {
 }
 
 impl ImageTexture {
-    pub fn from_file<P: AsRef<Path>>(path: P) -> Self {
+    pub fn from_file<P: AsRef<Path>>(path: P) -> Arc<Self> {
         let im = image::open(path).unwrap();
         let width = im.width() as usize;
         let height = im.height() as usize;
@@ -93,12 +93,12 @@ impl ImageTexture {
             let float_datum = *datum as f64 * COLOR_SCALE;
             *datum = ((float_datum * float_datum) * 255.0) as u8;
         }
-        Self {
+        Arc::new(Self {
             data,
             width,
             height,
             bytes_per_scanline: width * 3,
-        }
+        })
     }
 }
 

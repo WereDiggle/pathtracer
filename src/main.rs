@@ -55,7 +55,7 @@ fn main() {
     progress_bar.set_job_title("Rendering...");
 
     // World generation
-    let (world, camera) = simple_light(&config);
+    let (world, camera) = cornell_box(&config);
 
     let worker_pool = WorkerPool::spawn(11, world, camera, config.clone());
     let worker_pool = Arc::new(worker_pool);
@@ -97,26 +97,24 @@ type ThreadHittable = dyn Hittable + Send + Sync;
 pub fn earth() -> Arc<ThreadHittable> {
     let earth_texture =
         ImageTexture::from_file(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/earthmap.jpg"));
-    let earth_surface = Lambertian::from_texture(Arc::new(earth_texture));
-    let globe = Sphere::new(Vec3::zero(), 2.0, Arc::new(earth_surface));
-
-    Arc::new(globe)
+    let earth_surface = Lambertian::from_texture(earth_texture);
+    Sphere::new(Vec3::zero(), 2.0, earth_surface)
 }
 
 pub fn two_perlin_spheres() -> Arc<ThreadHittable> {
     let mut world = HitList::new();
 
-    let perlin_texture = Arc::new(NoiseTexture::new(10.0));
-    world.add(Arc::new(Sphere::new(
+    let perlin_texture = NoiseTexture::new(10.0);
+    world.add(Sphere::new(
         Vec3(0.0, -1000.0, 0.0),
         1000.0,
-        Arc::new(Lambertian::from_texture(perlin_texture.clone())),
-    )));
-    world.add(Arc::new(Sphere::new(
+        Lambertian::from_texture(perlin_texture.clone()),
+    ));
+    world.add(Sphere::new(
         Vec3(0.0, 2.0, 0.0),
         2.0,
-        Arc::new(Lambertian::from_texture(perlin_texture.clone())),
-    )));
+        Lambertian::from_texture(perlin_texture.clone()),
+    ));
 
     Arc::new(world)
 }
@@ -135,31 +133,29 @@ pub fn simple_light(config: &Config) -> (World, Arc<Camera>) {
 
     let mut world = HitList::new();
 
-    let pertext = Arc::new(NoiseTexture::new(4.0));
-    world.add(Sphere::arc_new(
+    let pertext = NoiseTexture::new(4.0);
+    world.add(Sphere::new(
         Vec3(0.0, -1000.0, 0.0),
         1000.0,
-        Arc::new(Lambertian::from_texture(pertext.clone())),
+        Lambertian::from_texture(pertext.clone()),
     ));
-    world.add(Sphere::arc_new(
+    world.add(Sphere::new(
         Vec3(0.0, 2.0, 0.0),
         2.0,
-        Arc::new(Lambertian::from_texture(pertext.clone())),
+        Lambertian::from_texture(pertext.clone()),
     ));
 
-    let difflight = Arc::new(DiffuseLight::from_texture(Arc::new(SolidColor::new(
-        4.0, 4.0, 4.0,
-    ))));
-    world.add(Sphere::arc_new(Vec3(0.0, 7.0, 0.0), 2.0, difflight.clone()));
-    world.add(Arc::new(AxisRectangle::new(
+    let difflight = DiffuseLight::from_texture(SolidColor::new(4.0, 4.0, 4.0));
+    world.add(Sphere::new(Vec3(0.0, 7.0, 0.0), 2.0, difflight.clone()));
+    world.add(AxisRectangle::new(
         "Z",
         (3.0, 5.0),
         (1.0, 3.0),
         (-2.0, -2.0),
         difflight.clone(),
-    )));
+    ));
 
-    let world = World::new(Arc::new(world), Arc::new(SolidColor::new(0.0, 0.0, 0.0)));
+    let world = World::new(Arc::new(world), SolidColor::new(0.0, 0.0, 0.0));
 
     (world, camera)
 }
@@ -178,41 +174,35 @@ pub fn random_scene(config: &Config) -> (World, Arc<Camera>) {
 
     let mut world = HitList::new();
 
-    let checkered = Arc::new(CheckerTexture::new(
+    let checkered = CheckerTexture::new(
         5.0,
-        Arc::new(SolidColor::new(0.2, 0.3, 0.1)),
-        Arc::new(SolidColor::new(0.9, 0.9, 0.9)),
-    ));
-    let noise = Arc::new(NoiseTexture::new(10.0));
-    let light = Arc::new(DiffuseLight::from_texture(Arc::new(SolidColor::new(
-        1.0, 1.0, 1.0,
-    ))));
-    world.add(Arc::new(Sphere::new(
+        SolidColor::new(0.2, 0.3, 0.1),
+        SolidColor::new(0.9, 0.9, 0.9),
+    );
+    let noise = NoiseTexture::new(10.0);
+    let light = DiffuseLight::from_texture(SolidColor::new(1.0, 1.0, 1.0));
+    world.add(Sphere::new(
         Vec3(0.0, -1000.0, 0.0),
         1000.0,
-        Arc::new(Lambertian::from_texture(checkered.clone())),
-    )));
+        Lambertian::from_texture(checkered.clone()),
+    ));
 
-    world.add(Arc::new(Sphere::new(
-        Vec3(0.0, 1.0, 0.0),
-        1.0,
-        Arc::new(Dielectric::new(1.5)),
-    )));
+    world.add(Sphere::new(Vec3(0.0, 1.0, 0.0), 1.0, Dielectric::new(1.5)));
     //world.add(Arc::new(Sphere::new(
     //    Vec3(0.0, 2.0, 6.0),
     //    2.0,
     //    light.clone(),
     //)));
-    world.add(Arc::new(Sphere::new(
+    world.add(Sphere::new(
         Vec3(-4.0, 1.0, 0.0),
         1.0,
-        Arc::new(Lambertian::from_color3(Vec3(0.4, 0.2, 0.1))),
-    )));
-    world.add(Arc::new(Sphere::new(
+        Lambertian::from_color3(Vec3(0.4, 0.2, 0.1)),
+    ));
+    world.add(Sphere::new(
         Vec3(4.0, 1.0, 0.0),
         1.0,
-        Arc::new(Metal::new(Vec3(0.7, 0.6, 0.5), 0.0)),
-    )));
+        Metal::new(Vec3(0.7, 0.6, 0.5), 0.0),
+    ));
 
     //world.add(SkySphere::from_texture(noise.clone()));
     //let world = BVH::from_hit_list(world, (0.0, 1.0));
@@ -225,21 +215,92 @@ pub fn two_spheres() -> Arc<dyn Hittable + Send + Sync> {
     let mut world = HitList::new();
     let checkered = CheckerTexture::new(
         10.0,
-        Arc::new(SolidColor::new(0.2, 0.3, 0.1)),
-        Arc::new(SolidColor::new(0.9, 0.9, 0.9)),
+        SolidColor::new(0.2, 0.3, 0.1),
+        SolidColor::new(0.9, 0.9, 0.9),
     );
-    let checker_matte = Arc::new(Lambertian::from_texture(Arc::new(checkered)));
+    let checker_matte = Lambertian::from_texture(checkered);
 
-    world.add(Arc::new(Sphere::new(
+    world.add(Sphere::new(
         Vec3(0.0, -10.0, 0.0),
         10.0,
         checker_matte.clone(),
-    )));
-    world.add(Arc::new(Sphere::new(
+    ));
+    world.add(Sphere::new(
         Vec3(0.0, 10.0, 0.0),
         10.0,
         checker_matte.clone(),
-    )));
+    ));
 
     Arc::new(world)
+}
+
+pub fn cornell_box(config: &Config) -> (World, Arc<Camera>) {
+    let lookfrom = Vec3(278.0, 278.0, -800.0);
+    let lookat = Vec3(278.0, 278.0, 0.0);
+    let camera = Arc::new(Camera::new(
+        (lookfrom, lookat, Vec3(0.0, 1.0, 0.0)),
+        40.0,
+        config.image_width as f64 / config.image_height as f64,
+        0.0,
+        10.0,
+        (0.0, 1.0),
+    ));
+
+    let mut world = HitList::new();
+
+    let red = Lambertian::from_rgb(0.65, 0.05, 0.05);
+    let white = Lambertian::from_rgb(0.73, 0.73, 0.73);
+    let green = Lambertian::from_rgb(0.12, 0.45, 0.15);
+    let light = DiffuseLight::from_texture(SolidColor::new(15.0, 15.0, 15.0));
+
+    world.add(FlipFace::new(AxisRectangle::new(
+        "X",
+        (555.0, 555.0),
+        (0.0, 555.0),
+        (0.0, 555.0),
+        green.clone(),
+    )));
+
+    world.add(AxisRectangle::new(
+        "X",
+        (0.0, 0.0),
+        (0.0, 555.0),
+        (0.0, 555.0),
+        red.clone(),
+    ));
+
+    world.add(AxisRectangle::new(
+        "Y",
+        (213.0, 343.0),
+        (554.0, 554.0),
+        (227.0, 332.0),
+        light,
+    ));
+
+    world.add(FlipFace::new(AxisRectangle::new(
+        "Y",
+        (0.0, 555.0),
+        (0.0, 0.0),
+        (0.0, 555.0),
+        white.clone(),
+    )));
+
+    world.add(AxisRectangle::new(
+        "Y",
+        (0.0, 555.0),
+        (555.0, 555.0),
+        (0.0, 555.0),
+        white.clone(),
+    ));
+
+    world.add(FlipFace::new(AxisRectangle::new(
+        "Z",
+        (0.0, 555.0),
+        (0.0, 555.0),
+        (555.0, 555.0),
+        white.clone(),
+    )));
+
+    let world = World::new(Arc::new(world), SolidColor::new(0.0, 0.0, 0.0));
+    (world, camera)
 }

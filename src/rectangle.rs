@@ -33,7 +33,7 @@ impl AxisRectangle {
         y: (f64, f64),
         z: (f64, f64),
         material: Arc<dyn Material + Send + Sync>,
-    ) -> Self {
+    ) -> Arc<Self> {
         let axis = axis.into();
         let (face, hort, vert) = match axis.into() {
             Axis::X => (x.0, y, z),
@@ -44,13 +44,13 @@ impl AxisRectangle {
         assert!(hort.0 < hort.1);
         assert!(vert.0 < vert.1);
 
-        Self {
+        Arc::new(Self {
             material,
             axis: axis.into(),
             face,
             hort,
             vert,
-        }
+        })
     }
 }
 

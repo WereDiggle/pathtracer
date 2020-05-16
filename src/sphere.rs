@@ -9,21 +9,17 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64, material: Arc<dyn Material + Send + Sync>) -> Self {
-        Self {
-            center: (center, center),
-            time: (0.0, 1.0),
-            radius,
-            material,
-        }
-    }
-
-    pub fn arc_new(
+    pub fn new(
         center: Point3,
         radius: f64,
         material: Arc<dyn Material + Send + Sync>,
     ) -> Arc<Self> {
-        Arc::new(Self::new(center, radius, material))
+        Arc::new(Self {
+            center: (center, center),
+            time: (0.0, 1.0),
+            radius,
+            material,
+        })
     }
 
     pub fn movement(mut self, center: Point3, time: (f64, f64)) -> Self {
@@ -99,7 +95,7 @@ pub struct SkySphere {
 impl SkySphere {
     pub fn from_texture(texture: Arc<dyn Texture + Send + Sync>) -> Arc<Self> {
         Arc::new(Self {
-            material: Arc::new(DiffuseLight::from_texture(texture)),
+            material: DiffuseLight::from_texture(texture),
         })
     }
 }

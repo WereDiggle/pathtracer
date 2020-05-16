@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use rand::random;
 
 use crate::*;
@@ -17,20 +19,20 @@ pub struct Lambertian {
 }
 
 impl Lambertian {
-    pub fn from_texture(albedo: Arc<dyn Texture + Send + Sync>) -> Self {
-        Self { albedo }
+    pub fn from_texture(albedo: Arc<dyn Texture + Send + Sync>) -> Arc<Self> {
+        Arc::new(Self { albedo })
     }
 
-    pub fn from_rgb(r: f64, g: f64, b: f64) -> Self {
-        Self {
-            albedo: Arc::new(SolidColor::new(r, g, b)),
-        }
+    pub fn from_rgb(r: f64, g: f64, b: f64) -> Arc<Self> {
+        Arc::new(Self {
+            albedo: SolidColor::new(r, g, b),
+        })
     }
 
-    pub fn from_color3(color: Color3) -> Self {
-        Self {
+    pub fn from_color3(color: Color3) -> Arc<Self> {
+        Arc::new(Self {
             albedo: Arc::new(SolidColor(color)),
-        }
+        })
     }
 }
 
@@ -49,11 +51,11 @@ pub struct Metal {
 }
 
 impl Metal {
-    pub fn new(albedo: Vec3, fuzz: f64) -> Self {
-        Self {
+    pub fn new(albedo: Vec3, fuzz: f64) -> Arc<Self> {
+        Arc::new(Self {
             albedo,
             fuzz: fuzz.clam(0.0, 1.0),
-        }
+        })
     }
 }
 
@@ -79,10 +81,10 @@ pub struct Dielectric {
 }
 
 impl Dielectric {
-    pub fn new(ref_index: f64) -> Self {
-        Self {
+    pub fn new(ref_index: f64) -> Arc<Self> {
+        Arc::new(Self {
             refract_index: ref_index,
-        }
+        })
     }
 
     fn schlick(&self, cosine: f64) -> f64 {
@@ -123,8 +125,8 @@ pub struct DiffuseLight {
 }
 
 impl DiffuseLight {
-    pub fn from_texture(emit: Arc<dyn Texture + Send + Sync>) -> Self {
-        Self { emit }
+    pub fn from_texture(emit: Arc<dyn Texture + Send + Sync>) -> Arc<Self> {
+        Arc::new(Self { emit })
     }
 }
 
