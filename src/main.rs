@@ -17,6 +17,7 @@ mod ray;
 mod texture;
 mod util;
 mod vec3;
+mod volume;
 mod worker;
 mod world;
 
@@ -29,22 +30,20 @@ pub use ray::*;
 pub use texture::*;
 pub use util::*;
 pub use vec3::*;
+pub use volume::*;
 pub use worker::*;
 pub use world::*;
 
 fn main() {
-    let quality = 4;
+    let quality = 2;
     let config = Config {
         image_width: 192 * quality,
-        image_height: 108 * quality,
-        samples_per_pixel: 256,
+        image_height: 192 * quality,
+        samples_per_pixel: 4096,
         max_depth: 50,
     };
 
     let mut image_buffer = DynamicImage::new_rgb8(config.image_width, config.image_height).to_rgb();
-
-    let mut progress_bar = progress::Bar::new();
-    progress_bar.set_job_title("Rendering...");
 
     // World generation
     let (world, camera) = cornell_box(&config);
@@ -76,6 +75,8 @@ fn main() {
     let mut color_weights =
         vec![(0, Vec3::zero()); (config.image_height * config.image_width) as usize];
     for pass in 1..=ramp.len() {
+        let pass_start = Instant::now();
+        let mut progress_bar = progress::Bar::new();
         progress_bar.set_job_title(&format!("Rendering Pass {}/{}", pass, ramp.len()));
         for prog in 0..(config.image_height * config.image_width) {
             let (new_weight, x, y, new_color) = worker_pool.recv_color();
@@ -90,6 +91,11 @@ fn main() {
             let progress = (prog * 100) / (config.image_height * config.image_width - 1);
             progress_bar.reach_percent(progress as i32);
         }
+        println!(
+            "\nPass {} took {} seconds\n",
+            pass,
+            pass_start.elapsed().as_secs()
+        );
         image_buffer
             .save(format!(
                 "output/{}_{}.png",
@@ -104,15 +110,14 @@ fn main() {
 
 fn sampling_ramp(mut total_samples: u32) -> Vec<u32> {
     let mut sampling_ramp = vec![];
-    let mut cur = 8;
-    while cur < total_samples {
+    let mut cur: u32;
+    while total_samples > 64 {
+        cur = total_samples / 2;
         total_samples -= cur;
         sampling_ramp.push(cur);
-        cur *= 2;
     }
     sampling_ramp.push(total_samples);
-    sampling_ramp.sort();
-    sampling_ramp
+    sampling_ramp.into_iter().rev().collect()
 }
 
 type ThreadHittable = dyn Hittable + Send + Sync;
@@ -324,16 +329,17 @@ pub fn cornell_box(config: &Config) -> (World, Arc<Camera>) {
         white.clone(),
     )));
 
-    world.add(Cube::new(
-        Vec3(130.0, 0.0, 65.0),
-        Vec3(295.0, 165.0, 230.0),
-        white.clone(),
-    ));
-    world.add(Cube::new(
-        Vec3(265.0, 0.0, 295.0),
-        Vec3(430.0, 330.0, 460.0),
-        white.clone(),
-    ));
+    let cube1 = Cube::new(Vec3::zero(), Vec3(165.0, 330.0, 165.0), white.clone());
+    let cube1 = YRotation::new(cube1, 15.0);
+    let cube1 = Translation::new(cube1, Vec3(265.0, 0.0, 295.0));
+    let cube1 = ConstantMedium::new(cube1, SolidColor::new(0.0, 0.0, 0.0), 0.01);
+    world.add(cube1);
+
+    let cube2 = Cube::new(Vec3::zero(), Vec3(165.0, 165.0, 165.0), white.clone());
+    let cube2 = YRotation::new(cube2, -18.0);
+    let cube2 = Translation::new(cube2, Vec3(130.0, 0.0, 65.0));
+    let cube2 = ConstantMedium::new(cube2, SolidColor::new(1.0, 1.0, 1.0), 0.01);
+    world.add(cube2);
 
     let world = World::new(Arc::new(world), SolidColor::new(0.0, 0.0, 0.0));
     (world, camera)

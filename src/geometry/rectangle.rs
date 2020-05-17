@@ -1,12 +1,5 @@
 use crate::*;
 
-#[derive(Clone, Copy)]
-pub enum Axis {
-    X,
-    Y,
-    Z,
-}
-
 impl From<&str> for Axis {
     fn from(axis: &str) -> Self {
         match axis {
