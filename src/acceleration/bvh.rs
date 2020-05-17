@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 
 use rand::{thread_rng, Rng};
 
+use crate::acceleration::hit_list;
 use crate::*;
 
 pub struct BVH {
