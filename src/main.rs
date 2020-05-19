@@ -35,7 +35,7 @@ pub use worker::*;
 pub use world::*;
 
 fn main() {
-    let quality = 2;
+    let quality = 4;
     let config = Config {
         image_width: 192 * quality,
         image_height: 192 * quality,
@@ -332,14 +332,20 @@ pub fn cornell_box(config: &Config) -> (World, Arc<Camera>) {
     let cube1 = Cube::new(Vec3::zero(), Vec3(165.0, 330.0, 165.0), white.clone());
     let cube1 = YRotation::new(cube1, 15.0);
     let cube1 = Translation::new(cube1, Vec3(265.0, 0.0, 295.0));
-    let cube1 = ConstantMedium::new(cube1, SolidColor::new(0.0, 0.0, 0.0), 0.01);
     world.add(cube1);
 
     let cube2 = Cube::new(Vec3::zero(), Vec3(165.0, 165.0, 165.0), white.clone());
     let cube2 = YRotation::new(cube2, -18.0);
     let cube2 = Translation::new(cube2, Vec3(130.0, 0.0, 65.0));
-    let cube2 = ConstantMedium::new(cube2, SolidColor::new(1.0, 1.0, 1.0), 0.01);
     world.add(cube2);
+
+    let fog = Cube::new(
+        Vec3(1.0, 1.0, 1.0),
+        Vec3(554.0, 554.0, 554.0),
+        white.clone(),
+    );
+    let fog = ConstantMedium::new(fog, SolidColor::new(1.0, 1.0, 1.0), 0.001);
+    world.add(fog);
 
     let world = World::new(Arc::new(world), SolidColor::new(0.0, 0.0, 0.0));
     (world, camera)
