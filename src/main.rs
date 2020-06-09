@@ -39,7 +39,7 @@ fn main() {
     let config = Config {
         image_width: 192 * quality,
         image_height: 192 * quality,
-        samples_per_pixel: 4096,
+        samples_per_pixel: 2048,
         max_depth: 50,
     };
 
@@ -280,6 +280,7 @@ pub fn cornell_box(config: &Config) -> (World, Arc<Camera>) {
     let white = Lambertian::from_rgb(0.73, 0.73, 0.73);
     let green = Lambertian::from_rgb(0.12, 0.45, 0.15);
     let light = DiffuseLight::from_texture(SolidColor::new(15.0, 15.0, 15.0));
+    let perlin_noise = NoiseTexture::new(0.01);
 
     world.add(FlipFace::new(AxisRectangle::new(
         "X",
@@ -340,11 +341,11 @@ pub fn cornell_box(config: &Config) -> (World, Arc<Camera>) {
     world.add(cube2);
 
     let fog = Cube::new(
-        Vec3(1.0, 1.0, 1.0),
+        Vec3(0.0, 0.0, 0.0),
         Vec3(554.0, 554.0, 554.0),
         white.clone(),
     );
-    let fog = ConstantMedium::new(fog, SolidColor::new(1.0, 1.0, 1.0), 0.001);
+    let fog = ConstantMedium::new(fog, perlin_noise.clone(), 0.001);
     world.add(fog);
 
     let world = World::new(Arc::new(world), SolidColor::new(0.0, 0.0, 0.0));
