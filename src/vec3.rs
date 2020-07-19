@@ -136,6 +136,18 @@ impl Vec3 {
             -in_unit_sphere
         }
     }
+
+    pub fn random_cosine_direction() -> Self {
+        let r1 = random::<f64>();
+        let r2 = random::<f64>();
+        let z = (1.0 - r2).sqrt();
+
+        let phi = 2.0 * std::f64::consts::PI * r1;
+        let x = r2.sqrt() * phi.cos();
+        let y = r2.sqrt() * phi.sin();
+
+        Vec3(x, y, z)
+    }
 }
 
 impl From<Vec3> for image::Rgb<u8> {

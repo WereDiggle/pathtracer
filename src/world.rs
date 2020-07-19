@@ -22,9 +22,14 @@ impl World {
 
         // We hit something
         if let Some(hit_record) = self.root.hit(&ray, 0.001, std::f64::INFINITY) {
-            if let Some((attenuation, scatter_ray)) = hit_record.material.scatter(&ray, &hit_record)
+            if let Some((albedo, scatter_ray, pdf)) = hit_record.material.scatter(&ray, &hit_record)
             {
-                return attenuation * self.ray_color(scatter_ray, depth - 1);
+                return albedo
+                    * hit_record
+                        .material
+                        .scattering_pdf(&ray, &hit_record, &scatter_ray)
+                    * self.ray_color(scatter_ray, depth - 1)
+                    / pdf;
             }
             return hit_record.emitted();
         }

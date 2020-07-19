@@ -14,6 +14,7 @@ mod geometry;
 mod material;
 mod perlin;
 mod ray;
+mod scenes;
 mod texture;
 mod util;
 mod vec3;
@@ -27,6 +28,7 @@ pub use geometry::*;
 pub use material::*;
 pub use perlin::*;
 pub use ray::*;
+pub use scenes::*;
 pub use texture::*;
 pub use util::*;
 pub use vec3::*;
@@ -35,10 +37,10 @@ pub use worker::*;
 pub use world::*;
 
 fn main() {
-    let quality = 4;
+    let quality = 5;
     let config = Config {
-        image_width: 192 * quality,
-        image_height: 192 * quality,
+        image_width: 100 * quality,
+        image_height: 100 * quality,
         samples_per_pixel: 2048,
         max_depth: 50,
     };
@@ -48,7 +50,7 @@ fn main() {
     // World generation
     let (world, camera) = cornell_box(&config);
 
-    let worker_pool = WorkerPool::spawn(11, world, camera, config.clone());
+    let worker_pool = WorkerPool::spawn(12, world, camera, config.clone());
     let worker_pool = Arc::new(worker_pool);
     let render_start = Instant::now();
 
@@ -118,236 +120,4 @@ fn sampling_ramp(mut total_samples: u32) -> Vec<u32> {
     }
     sampling_ramp.push(total_samples);
     sampling_ramp.into_iter().rev().collect()
-}
-
-type ThreadHittable = dyn Hittable + Send + Sync;
-
-pub fn earth() -> Arc<ThreadHittable> {
-    let earth_texture =
-        ImageTexture::from_file(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/earthmap.jpg"));
-    let earth_surface = Lambertian::from_texture(earth_texture);
-    Sphere::new(Vec3::zero(), 2.0, earth_surface)
-}
-
-pub fn two_perlin_spheres() -> Arc<ThreadHittable> {
-    let mut world = HitList::new();
-
-    let perlin_texture = NoiseTexture::new(10.0);
-    world.add(Sphere::new(
-        Vec3(0.0, -1000.0, 0.0),
-        1000.0,
-        Lambertian::from_texture(perlin_texture.clone()),
-    ));
-    world.add(Sphere::new(
-        Vec3(0.0, 2.0, 0.0),
-        2.0,
-        Lambertian::from_texture(perlin_texture.clone()),
-    ));
-
-    Arc::new(world)
-}
-
-pub fn simple_light(config: &Config) -> (World, Arc<Camera>) {
-    let lookfrom = Vec3(30.0, 0.0, 5.0) + Vec3(0.0, 4.0, 0.0);
-    let lookat = Vec3(0.0, 0.0, 0.0);
-    let camera = Arc::new(Camera::new(
-        (lookfrom, lookat, Vec3(0.0, 1.0, 0.0)),
-        20.0,
-        config.image_width as f64 / config.image_height as f64,
-        0.0,
-        10.0,
-        (0.0, 1.0),
-    ));
-
-    let mut world = HitList::new();
-
-    let pertext = NoiseTexture::new(4.0);
-    world.add(Sphere::new(
-        Vec3(0.0, -1000.0, 0.0),
-        1000.0,
-        Lambertian::from_texture(pertext.clone()),
-    ));
-    world.add(Sphere::new(
-        Vec3(0.0, 2.0, 0.0),
-        2.0,
-        Lambertian::from_texture(pertext.clone()),
-    ));
-
-    let difflight = DiffuseLight::from_texture(SolidColor::new(4.0, 4.0, 4.0));
-    world.add(Sphere::new(Vec3(0.0, 7.0, 0.0), 2.0, difflight.clone()));
-    world.add(AxisRectangle::new(
-        "Z",
-        (3.0, 5.0),
-        (1.0, 3.0),
-        (-2.0, -2.0),
-        difflight.clone(),
-    ));
-
-    let world = World::new(Arc::new(world), SolidColor::new(0.0, 0.0, 0.0));
-
-    (world, camera)
-}
-
-pub fn random_scene(config: &Config) -> (World, Arc<Camera>) {
-    let lookfrom = Vec3(30.0, 1.0, 20.0);
-    let lookat = Vec3(0.0, 1.0, 0.0);
-    let camera = Arc::new(Camera::new(
-        (lookfrom, lookat, Vec3(0.0, 1.0, 0.0)),
-        20.0,
-        config.image_width as f64 / config.image_height as f64,
-        0.0,
-        10.0,
-        (0.0, 1.0),
-    ));
-
-    let mut world = HitList::new();
-
-    let checkered = CheckerTexture::new(
-        5.0,
-        SolidColor::new(0.2, 0.3, 0.1),
-        SolidColor::new(0.9, 0.9, 0.9),
-    );
-    let noise = NoiseTexture::new(10.0);
-    let light = DiffuseLight::from_texture(SolidColor::new(1.0, 1.0, 1.0));
-    world.add(Sphere::new(
-        Vec3(0.0, -1000.0, 0.0),
-        1000.0,
-        Lambertian::from_texture(checkered.clone()),
-    ));
-
-    world.add(Sphere::new(Vec3(0.0, 1.0, 0.0), 1.0, Dielectric::new(1.5)));
-    //world.add(Arc::new(Sphere::new(
-    //    Vec3(0.0, 2.0, 6.0),
-    //    2.0,
-    //    light.clone(),
-    //)));
-    world.add(Sphere::new(
-        Vec3(-4.0, 1.0, 0.0),
-        1.0,
-        Lambertian::from_color3(Vec3(0.4, 0.2, 0.1)),
-    ));
-    world.add(Sphere::new(
-        Vec3(4.0, 1.0, 0.0),
-        1.0,
-        Metal::new(Vec3(0.7, 0.6, 0.5), 0.0),
-    ));
-
-    //world.add(SkySphere::from_texture(noise.clone()));
-    //let world = BVH::from_hit_list(world, (0.0, 1.0));
-    let world = World::new(Arc::new(world), noise.clone());
-
-    (world, camera)
-}
-
-pub fn two_spheres() -> Arc<dyn Hittable + Send + Sync> {
-    let mut world = HitList::new();
-    let checkered = CheckerTexture::new(
-        10.0,
-        SolidColor::new(0.2, 0.3, 0.1),
-        SolidColor::new(0.9, 0.9, 0.9),
-    );
-    let checker_matte = Lambertian::from_texture(checkered);
-
-    world.add(Sphere::new(
-        Vec3(0.0, -10.0, 0.0),
-        10.0,
-        checker_matte.clone(),
-    ));
-    world.add(Sphere::new(
-        Vec3(0.0, 10.0, 0.0),
-        10.0,
-        checker_matte.clone(),
-    ));
-
-    Arc::new(world)
-}
-
-pub fn cornell_box(config: &Config) -> (World, Arc<Camera>) {
-    let lookfrom = Vec3(278.0, 278.0, -800.0);
-    let lookat = Vec3(278.0, 278.0, 0.0);
-    let camera = Arc::new(Camera::new(
-        (lookfrom, lookat, Vec3(0.0, 1.0, 0.0)),
-        40.0,
-        config.image_width as f64 / config.image_height as f64,
-        0.0,
-        10.0,
-        (0.0, 1.0),
-    ));
-
-    let mut world = HitList::new();
-
-    let red = Lambertian::from_rgb(0.65, 0.05, 0.05);
-    let white = Lambertian::from_rgb(0.73, 0.73, 0.73);
-    let green = Lambertian::from_rgb(0.12, 0.45, 0.15);
-    let light = DiffuseLight::from_texture(SolidColor::new(15.0, 15.0, 15.0));
-    let perlin_noise = NoiseTexture::new(0.01);
-
-    world.add(FlipFace::new(AxisRectangle::new(
-        "X",
-        (555.0, 555.0),
-        (0.0, 555.0),
-        (0.0, 555.0),
-        green.clone(),
-    )));
-
-    world.add(AxisRectangle::new(
-        "X",
-        (0.0, 0.0),
-        (0.0, 555.0),
-        (0.0, 555.0),
-        red.clone(),
-    ));
-
-    world.add(AxisRectangle::new(
-        "Y",
-        (213.0, 343.0),
-        (554.0, 554.0),
-        (227.0, 332.0),
-        light,
-    ));
-
-    world.add(FlipFace::new(AxisRectangle::new(
-        "Y",
-        (0.0, 555.0),
-        (0.0, 0.0),
-        (0.0, 555.0),
-        white.clone(),
-    )));
-
-    world.add(AxisRectangle::new(
-        "Y",
-        (0.0, 555.0),
-        (555.0, 555.0),
-        (0.0, 555.0),
-        white.clone(),
-    ));
-
-    world.add(FlipFace::new(AxisRectangle::new(
-        "Z",
-        (0.0, 555.0),
-        (0.0, 555.0),
-        (555.0, 555.0),
-        white.clone(),
-    )));
-
-    let cube1 = Cube::new(Vec3::zero(), Vec3(165.0, 330.0, 165.0), white.clone());
-    let cube1 = YRotation::new(cube1, 15.0);
-    let cube1 = Translation::new(cube1, Vec3(265.0, 0.0, 295.0));
-    world.add(cube1);
-
-    let cube2 = Cube::new(Vec3::zero(), Vec3(165.0, 165.0, 165.0), white.clone());
-    let cube2 = YRotation::new(cube2, -18.0);
-    let cube2 = Translation::new(cube2, Vec3(130.0, 0.0, 65.0));
-    world.add(cube2);
-
-    let fog = Cube::new(
-        Vec3(0.0, 0.0, 0.0),
-        Vec3(554.0, 554.0, 554.0),
-        white.clone(),
-    );
-    let fog = ConstantMedium::new(fog, perlin_noise.clone(), 0.001);
-    world.add(fog);
-
-    let world = World::new(Arc::new(world), SolidColor::new(0.0, 0.0, 0.0));
-    (world, camera)
 }
