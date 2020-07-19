@@ -43,10 +43,12 @@ impl Lambertian {
 
 impl Material for Lambertian {
     fn scatter(&self, ray_in: &Ray, hit: &HitRecord) -> Option<(Vec3, Ray, f64)> {
-        let scatter_direction = Vec3::random_in_hemisphere(hit.normal);
+        let uvw = ONB::build_from_w(&hit.normal);
+        //let scatter_direction = Vec3::random_in_hemisphere(hit.normal);
+        let scatter_direction = uvw.local(&Vec3::random_cosine_direction());
         let scatter_ray = Ray::new(hit.position, scatter_direction, ray_in.time);
         let albedo = self.albedo.value(hit.u, hit.v, &hit.position);
-        let pdf = 0.5 / PI;
+        let pdf = uvw.w().dot(scatter_ray.direction) / PI;
         Some((albedo, scatter_ray, pdf))
     }
 
