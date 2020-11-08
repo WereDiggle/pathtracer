@@ -35,13 +35,13 @@ pub fn cornell_box(config: &Config) -> (World, Arc<Camera>) {
         red.clone(),
     ));
 
-    world.add(AxisRectangle::new(
+    world.add(FlipFace::new(AxisRectangle::new(
         "Y",
         (213.0, 343.0),
         (554.0, 554.0),
         (227.0, 332.0),
         light,
-    ));
+    )));
 
     world.add(FlipFace::new(AxisRectangle::new(
         "Y",

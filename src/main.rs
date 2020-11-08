@@ -43,7 +43,7 @@ fn main() {
     let config = Config {
         image_width: 100 * quality,
         image_height: 100 * quality,
-        samples_per_pixel: 2048,
+        samples_per_pixel: 10,
         max_depth: 50,
     };
 

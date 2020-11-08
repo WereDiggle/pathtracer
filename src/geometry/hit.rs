@@ -35,8 +35,9 @@ impl HitRecord {
         }
     }
 
-    pub fn emitted(&self) -> Color3 {
-        self.material.emitted(self.u, self.v, &self.position)
+    pub fn emitted(&self, ray_in: &Ray) -> Color3 {
+        self.material
+            .emitted(ray_in, self, self.u, self.v, &self.position)
     }
 }
 
